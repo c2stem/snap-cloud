@@ -1,0 +1,33 @@
+{
+  "name": "snap-server",
+  "version": "1.0.0",
+  "description": "Express extension for a Snap! (Build Your Own Blocks) server",
+  "main": "test.js",
+  "scripts": {
+    "test": "./node_modules/nodemon/bin/nodemon.js test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/c2stem/snap-server.git"
+  },
+  "keywords": [
+    "snap",
+    "express"
+  ],
+  "author": {
+    "name": "Miklos Maroti",
+    "email": "mmaroti@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/c2stem/snap-server/issues"
+  },
+  "homepage": "https://github.com/c2stem/snap-server#readme",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.11.0"
+  }
+}
