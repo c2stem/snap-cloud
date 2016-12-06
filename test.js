@@ -5,7 +5,8 @@ var app = express();
 
 // handle snap server requests
 app.use("/SnapCloud", snapServer({
-    secret: "SnapCloud"
+    secret: "SnapCloud",
+    secure: false
 }));
 
 // serve static files

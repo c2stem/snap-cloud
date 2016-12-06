@@ -22,12 +22,14 @@
   "bugs": {
     "url": "https://github.com/c2stem/snap-server/issues"
   },
-  "homepage": "https://github.com/c2stem/snap-server#readme",
+  "homepage": "https://github.com/c2stem/snap-server",
   "dependencies": {
-    "body-parser": "^1.15.2",
-    "express": "^4.14.0"
+    "body-parser": ">=1.15.0",
+    "express": ">=4.14.0",
+    "express-session": ">=1.14.0",
+    "on-headers": ">=1.0.0"
   },
   "devDependencies": {
-    "nodemon": "^1.11.0"
+    "nodemon": ">=1.11.0"
   }
 }

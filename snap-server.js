@@ -2,13 +2,13 @@
 
 var express = require("express");
 var bodyParser = require("body-parser");
-var cookieCoder = require("cookie");
-var cookieSigner = require("cookie-signature");
+var session = require("express-session");
+var onHeaders = require("on-headers");
 
 function snapServer(options) {
     var router = express.Router();
 
-    // allow cross origin access
+    // Allow cross origin access
     router.options("/", function (req, res, next) {
         res.header("Access-Control-Allow-Methods", "GET, POST");
         res.header("Access-Control-Allow-Credentials", "true");
@@ -44,32 +44,43 @@ function snapServer(options) {
         }).join(" ");
     }
 
-    // to decode req.body fields
+    // Decode req.body fields
     router.use(bodyParser.json());
+
+    // Copy cookie to MioCracker
+    router.use(function (req, res, next) {
+        onHeaders(res, function () {
+            var cookie = this.getHeader("Set-Cookie");
+            if (cookie) {
+                this.setHeader("MioCracker", cookie);
+            }
+        });
+        next();
+    });
+
+    // Enable session support
+    router.use(session({
+        secret: "SnapSecret",
+        resave: false,
+        saveUninitialized: true,
+        cookie: {
+            secure: options.secure,
+            htmlOnly: true,
+            ephemeral: true
+        }
+    }));
 
     // Login service
     router.post("/", function (req, res) {
         var user = req.body.__u,
             hash = req.body.__h;
 
-        var api = formatAPI();
-
         res.header("Access-Control-Allow-Credentials", "true");
         res.header("Access-Control-Allow-Origin", req.get("Origin"));
         res.header("Access-Control-Expose-Headers", "MioCracker, SESSIONGLUE");
         res.header("Cache-Control", "no-store");
 
-        var cookieValue = "hello";
-        var cookie = cookieCoder.serialize(
-            "snap",
-            cookieSigner.sign(cookieValue, options.secret), {
-                httpOnly: true
-            });
-        console.log(cookie);
-
-        res.header("MioCracker", cookie);
-        res.header("Set-Cookie", cookie);
-
+        var api = formatAPI();
         res.send(api);
     });
 
