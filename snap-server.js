@@ -9,13 +9,17 @@ function snapServer(options) {
     var router = express.Router();
 
     // Allow cross origin access
-    router.options("/", function (req, res, next) {
+    router.use("*", function (req, res, next) {
         res.header("Access-Control-Allow-Methods", "GET, POST");
         res.header("Access-Control-Allow-Credentials", "true");
         res.header("Access-Control-Allow-Origin", req.get("Origin"));
-        res.header("Access-Control-Allow-Headers", "Content-Type, SESSIONGLUE");
-        res.header("Access-Control-Expose-Headers", "SESSIONGLUE");
+        res.header("Access-Control-Allow-Headers", "Content-Type, SESSIONGLUE, MioCracker");
+        // res.header("Access-Control-Expose-Headers", "SESSIONGLUE");
         res.header("Cache-Control", "no-store");
+        next();
+    });
+
+    router.options("*", function (req, res) {
         res.sendStatus(200);
     });
 
@@ -58,8 +62,19 @@ function snapServer(options) {
         next();
     });
 
+    router.use(function (req, res, next) {
+        var cookie = req.header("MioCracker");
+        console.log("MioCracker", cookie);
+
+        // HACK, but is there another way?
+        req.headers["Set-Cookie"] = cookie;
+
+        next();
+    });
+
     // Enable session support
     router.use(session({
+        name: "snapcloud", // SNAP parses this and sets LIMO to substr(9, ...)
         secret: "SnapSecret",
         resave: false,
         saveUninitialized: true,
@@ -80,8 +95,16 @@ function snapServer(options) {
         res.header("Access-Control-Expose-Headers", "MioCracker, SESSIONGLUE");
         res.header("Cache-Control", "no-store");
 
+        req.session.user = user;
+        console.log("user login", user)
+
         var api = formatAPI();
         res.send(api);
+    });
+
+    router.get("/logout", function (req, res) {
+        console.log(req.session);
+        res.sendStatus(200);
     });
 
     return router;
