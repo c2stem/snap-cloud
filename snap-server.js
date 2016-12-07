@@ -4,6 +4,8 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var session = require("express-session");
 var onHeaders = require("on-headers");
+var MongoStore = require("connect-mongo")(session);
+var cookieParser = require("cookie");
 
 function snapServer(options) {
     var router = express.Router();
@@ -12,9 +14,9 @@ function snapServer(options) {
     router.use("*", function (req, res, next) {
         res.header("Access-Control-Allow-Methods", "GET, POST");
         res.header("Access-Control-Allow-Credentials", "true");
-        res.header("Access-Control-Allow-Origin", req.get("Origin"));
+        res.header("Access-Control-Allow-Origin", req.get("origin"));
         res.header("Access-Control-Allow-Headers", "Content-Type, SESSIONGLUE, MioCracker");
-        // res.header("Access-Control-Expose-Headers", "SESSIONGLUE");
+        res.header("Access-Control-Expose-Headers", "MioCracker");
         res.header("Cache-Control", "no-store");
         next();
     });
@@ -51,60 +53,100 @@ function snapServer(options) {
     // Decode req.body fields
     router.use(bodyParser.json());
 
-    // Copy cookie to MioCracker
+    function parseCookies(cookies) {
+        cookies = cookies || "";
+        if (cookies instanceof Array) {
+            cookies = cookies.join(" ");
+        }
+        return cookieParser.parse(cookies);
+    }
+
+    // Copy the cookie to MioCracker
     router.use(function (req, res, next) {
         onHeaders(res, function () {
-            var cookie = this.getHeader("Set-Cookie");
-            if (cookie) {
-                this.setHeader("MioCracker", cookie);
+            var cookies = parseCookies(this.getHeader("Set-Cookie"));
+            if (!cookies.snapcloud) {
+                cookies = parseCookies(req.get("Cookie"));
+            }
+
+            if (cookies.snapcloud) {
+                var cracker = cookieParser.serialize("snapcloud", cookies.snapcloud);
+                console.log("MioCracker", cracker);
+                this.setHeader("MioCracker", cracker);
+            } else {
+                console.log("Could not set MioCracker");
             }
         });
+
         next();
     });
 
+    // Append MioCracker to the cookies
     router.use(function (req, res, next) {
-        var cookie = req.header("MioCracker");
-        console.log("MioCracker", cookie);
+        var cracker = req.header("MioCracker"),
+            cookie = parseCookies(req.headers.cookie);
 
-        // HACK, but is there another way?
-        req.headers["Set-Cookie"] = cookie;
+        if (cracker && !cookie.snapcloud) {
+            cookie = cookieParser.serialize("snapcloud", cracker);
+            if (req.headers.cookie) {
+                req.headers.cookie += " " + cookie;
+            } else {
+                req.headers.cookie = cookie;
+            }
+        }
 
         next();
     });
 
     // Enable session support
-    router.use(session({
-        name: "snapcloud", // SNAP parses this and sets LIMO to substr(9, ...)
-        secret: "SnapSecret",
-        resave: false,
-        saveUninitialized: true,
-        cookie: {
-            secure: options.secure,
-            htmlOnly: true,
-            ephemeral: true
-        }
-    }));
+    router.use(function (req, res, next) {
+        var fun = session({
+            name: "snapcloud", // SNAP parses this and sets LIMO to substr(9, ...)
+            secret: options.session_secret || "snapsecreet",
+            resave: true,
+            saveUninitialized: false,
+            store: new MongoStore({
+                url: options.mongodb_url
+            }),
+            unset: "destroy",
+            cookie: {
+                secure: options.cookie_secure || false,
+                htmlOnly: false
+            }
+        });
+
+        console.log("SESSION SUPPORT START");
+        return fun(req, res, function () {
+            console.log("SESSION SUPPORT END");
+            next();
+        });
+    });
 
     // Login service
     router.post("/", function (req, res) {
         var user = req.body.__u,
             hash = req.body.__h;
 
-        res.header("Access-Control-Allow-Credentials", "true");
-        res.header("Access-Control-Allow-Origin", req.get("Origin"));
-        res.header("Access-Control-Expose-Headers", "MioCracker, SESSIONGLUE");
-        res.header("Cache-Control", "no-store");
-
         req.session.user = user;
-        console.log("user login", user)
+        console.log("login", req.session.user);
+        req.session.save();
 
         var api = formatAPI();
         res.send(api);
     });
 
-    router.get("/logout", function (req, res) {
-        console.log(req.session);
+    router.get("/logout*", function (req, res) {
+        console.log("logout", req.session.user);
         res.sendStatus(200);
+    });
+
+    router.use(function (req, res) {
+        console.log("Unhandled Request");
+        console.log('Method:', req.method);
+        console.log('Path:', req.path);
+        console.log('OriginalUrl:', req.originalUrl);
+        console.log('Params:', req.params);
+        res.sendStatus(404);
     });
 
     return router;
