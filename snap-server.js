@@ -71,7 +71,6 @@ function snapServer(options) {
 
             if (cookies.snapcloud) {
                 var cracker = cookieParser.serialize("snapcloud", cookies.snapcloud);
-                console.log("MioCracker", cracker);
                 this.setHeader("MioCracker", cracker);
             } else {
                 console.log("Could not set MioCracker");
@@ -87,11 +86,10 @@ function snapServer(options) {
             cookie = parseCookies(req.headers.cookie);
 
         if (cracker && !cookie.snapcloud) {
-            cookie = cookieParser.serialize("snapcloud", cracker);
             if (req.headers.cookie) {
-                req.headers.cookie += " " + cookie;
+                req.headers.cookie += " " + cracker;
             } else {
-                req.headers.cookie = cookie;
+                req.headers.cookie = cracker;
             }
         }
 
@@ -99,28 +97,21 @@ function snapServer(options) {
     });
 
     // Enable session support
-    router.use(function (req, res, next) {
-        var fun = session({
-            name: "snapcloud", // SNAP parses this and sets LIMO to substr(9, ...)
-            secret: options.session_secret || "snapsecreet",
-            resave: true,
-            saveUninitialized: false,
-            store: new MongoStore({
-                url: options.mongodb_url
-            }),
-            unset: "destroy",
-            cookie: {
-                secure: options.cookie_secure || false,
-                htmlOnly: false
-            }
-        });
-
-        console.log("SESSION SUPPORT START");
-        return fun(req, res, function () {
-            console.log("SESSION SUPPORT END");
-            next();
-        });
-    });
+    router.use(session({
+        name: "snapcloud", // SNAP parses this and sets LIMO to substr(9, ...)
+        secret: options.session_secret || "snapsecreet",
+        resave: true,
+        saveUninitialized: false,
+        store: new MongoStore({
+            url: options.mongodb_url,
+            ttl: 1 * 3600 // one hour 
+        }),
+        unset: "destroy",
+        cookie: {
+            secure: options.cookie_secure || false,
+            htmlOnly: false
+        }
+    }));
 
     // Login service
     router.post("/", function (req, res) {
@@ -137,6 +128,8 @@ function snapServer(options) {
 
     router.get("/logout*", function (req, res) {
         console.log("logout", req.session.user);
+        req.session = null;
+
         res.sendStatus(200);
     });
 
