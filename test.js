@@ -1,19 +1,28 @@
-var express = require("express");
-var snapServer = require("./snap-server");
+var express = require('express');
+var snapServer = require('./snap-server');
+var MongoClient = require('mongodb').MongoClient;
 
-var app = express();
+MongoClient.connect('mongodb://localhost/snapcloud', function (err, db) {
+    if (err) {
+        console.log('Could not connect to MongoDB', err);
+    } else {
+        console.log('Connected to MongoDB');
 
-// handle snap server requests
-app.use("/SnapCloud", snapServer({
-    session_secret: "SnapCloud",
-    cookie_secure: false,
-    mongodb_url: "mongodb://localhost/snapcloud"
-}));
+        var app = express();
 
-// serve static files
-app.use(express.static("/home/mmaroti/workspace/snap-physics/"));
+        // Handle snap server requests
+        app.use('/SnapCloud', snapServer({
+            session_secret: 'SnapCloud',
+            cookie_secure: false,
+            mongodb: db
+        }));
 
-// start the server
-app.listen(8080, function () {
-    console.log("listening on port 8080");
+        // Serve static files
+        app.use(express.static('/home/mmaroti/workspace/snap-physics/'));
+
+        // Start the server
+        app.listen(8080, function () {
+            console.log('Listening on port 8080');
+        });
+    }
 });

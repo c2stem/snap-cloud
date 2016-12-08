@@ -1,0 +1,18 @@
+{
+    "env": {
+        "node": true
+    },
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "no-undef": "off",
+        "no-unused-vars": "off",
+        "no-console": "off",
+        "semi": "error",
+        "curly": "error",
+        "eqeqeq": "error",
+        "block-scoped-var": "error"
+    }
+}
