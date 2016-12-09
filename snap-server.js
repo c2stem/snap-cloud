@@ -1,48 +1,45 @@
 'use strict';
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var session = require('express-session');
-var onHeaders = require('on-headers');
-var MongoStore = require('connect-mongo')(session);
-var cookieParser = require('cookie');
-var debug = require('debug')('snap-server');
+var express = require('express'),
+    bodyParser = require('body-parser'),
+    session = require('express-session'),
+    onHeaders = require('on-headers'),
+    MongoStore = require('connect-mongo')(session),
+    cookieParser = require('cookie'),
+    debug = require('debug')('snap-server'),
+    nodeMailer = require('nodemailer'),
+    generatePassword = require('generate-password'),
+    shaJs = require('sha.js');
 
 function snapServer(options) {
     var router = express.Router(),
         users = options.mongodb.collection('users'),
-        services = {};
+        projects = options.mongodb.collection('projects'),
+        transport = nodeMailer.createTransport(options.mailer_smpt),
+        apis = '';
 
-    router.addSnapApi = function addSnapApi(name, parameters, method) {
-        services[name] = {
-            parameters: parameters,
-            method: method
-        };
+    router.addSnapApi = function addSnapApi(name, parameters, method, handler) {
+        if (apis) {
+            apis += ' ';
+        }
+
+        apis += 'Service=' + name;
+        apis += '&Parameters=' + parameters.join(',');
+        apis += '&Method=' + method;
+        apis += '&URL=' + name;
+
+        if (handler && method === 'Get') {
+            router.get('/' + name + '*', handler);
+        } else if (handler && method === 'Post') {
+            router.post('/' + name + '*', handler);
+        }
     };
 
-    function formatAPI() {
-        return Object.keys(services).map(function (name) {
-            var service = services[name],
-                ret;
-
-            ret = 'Service=' + name;
-            ret += '&Parameters=' + service.parameters.join(',');
-            ret += '&Method=' + service.method;
-            ret += '&URL=' + name;
-
-            return ret;
-        }).join(' ');
+    function sendSnapError(res, text) {
+        text = 'ERROR: ' + text;
+        debug(text);
+        res.status(400).send(text);
     }
-
-    // Monkey patch sendSnapError method
-    router.use('*', function (req, res, next) {
-        res.sendSnapError = function sendSnapError(text) {
-            text = "ERROR: " + text;
-            debug(text);
-            this.status(400).send(text);
-        };
-        next();
-    });
 
     // Allow cross origin access
     router.use('*', function allowCORS(req, res, next) {
@@ -60,6 +57,9 @@ function snapServer(options) {
     });
 
     // Decode req.body fields
+    router.use(bodyParser.urlencoded({
+        extended: true
+    }));
     router.use(bodyParser.json());
 
     function parseCookies(cookies) {
@@ -82,7 +82,7 @@ function snapServer(options) {
                 var cracker = cookieParser.serialize('snapcloud', cookies.snapcloud);
                 this.setHeader('MioCracker', cracker);
             } else {
-                debug('Could not set MioCracker');
+                this.setHeader('MioCracker', 'nothing'); // client fails if not set
             }
         });
 
@@ -122,48 +122,70 @@ function snapServer(options) {
         }
     }));
 
+    function hashPassword(password) {
+        return shaJs('sha512').update(password).digest('hex');
+    }
+
+    function emailPassword(res, email, user, password) {
+        transport.sendMail({
+            from: options.mailer_from,
+            to: email,
+            subject: 'Temporary Password',
+            text: 'Hello ' + user +
+                '!\n\nYour Snap password has been temporarily set to: ' +
+                password + '. Please change it after logging in.'
+        }, function (err) {
+            if (err) {
+                sendSnapError(res, 'Could not send email');
+            } else {
+                res.sendStatus(200);
+            }
+        });
+    }
+
     // Signup
     router.get('/SignUp', function signup(req, res) {
         var user = req.query.Username,
-            email = req.query.Email;
-        debug('Sign up request:', user, email);
+            email = req.query.Email,
+            password = generatePassword.generate({});
+        debug('Sign up', user, email);
 
         if (!email || !user) {
-            res.sendSnapError('Invalid signup request');
+            sendSnapError(res, 'Invalid signup request');
         }
 
         users.insert({
             _id: user,
             email: email,
-            hash: null,
+            hash: hashPassword(password),
             created: new Date()
         }, function signupDone(err) {
             if (err) {
-                res.sendSnapError('User already exists');
+                sendSnapError(res, 'User already exists');
             } else {
-                // TODO: send mail
-                return res.send('OK');
+                emailPassword(res, email, user, password);
             }
         });
     });
 
     // ResetPW
     router.get('/ResetPW', function resetPw(req, res) {
-        var user = req.query.Username;
-        debug('Password reset request:', user);
+        var user = req.query.Username,
+            password = generatePassword.generate({});
+        debug('Reset password', user);
 
-        users.update({
+        users.findAndModify({
             _id: user
-        }, {
+        }, [], {
             $set: {
-                hash: null
+                hash: hashPassword(password),
+                modified: new Date()
             }
-        }, function resetPwDone(err, status) {
-            if (err || status.result.n === 0) {
-                res.sendSnapError('User does not exists');
+        }, function resetPwDone(err, doc) {
+            if (err || !doc) {
+                sendSnapError(res, 'User not found');
             } else {
-                // TODO: send mail
-                return res.send('OK');
+                emailPassword(res, doc.value.email, user, password);
             }
         });
     });
@@ -172,25 +194,56 @@ function snapServer(options) {
     router.post('/', function (req, res) {
         var user = req.body.__u,
             hash = req.body.__h;
+        debug('Login', user);
 
-        req.session.user = user;
-        debug('Login', req.session.user);
-        req.session.save();
-
-        var api = formatAPI();
-        res.send(api);
+        users.findOne({
+            _id: user
+        }, function (err, doc) {
+            if (err || !doc) {
+                sendSnapError(res, 'User not found');
+            } else if (hash !== doc.hash) {
+                sendSnapError(res, 'Invalid password');
+            } else {
+                req.session.user = user;
+                res.send(apis);
+            }
+        });
     });
 
     // Logout
-    router.addSnapApi('logout', [], 'Get');
-    router.get('/logout*', function (req, res) {
+    router.addSnapApi('logout', [], 'Get', function (req, res) {
         debug('Logout', req.session.user);
         req.session = null;
-
         res.sendStatus(200);
     });
 
-    router.addSnapApi('changePassword', ['OldPassword', 'NewPassword'], 'Post');
+    // ChangePassword
+    router.addSnapApi('changePassword', ['OldPassword', 'NewPassword'], 'Post', function (req, res) {
+        debug('Change password', req.session.user);
+
+        if (typeof req.body.OldPassword !== 'string' ||
+            typeof req.body.NewPassword !== 'string' ||
+            typeof req.session.user !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            users.findAndModify({
+                _id: req.session.user,
+                hash: req.body.OldPassword
+            }, [], {
+                $set: {
+                    hash: req.body.NewPassword,
+                    modified: new Date()
+                }
+            }, function changePwDone(err, doc) {
+                if (err || !doc) {
+                    sendSnapError(res, 'Invalid password');
+                } else {
+                    res.sendStatus(200);
+                }
+            });
+        }
+    });
+
     router.addSnapApi('getProjectList', [], 'Get');
     router.addSnapApi('getProject', ['ProjectName'], 'Post');
     router.addSnapApi('getRawProject', ['ProjectName'], 'Post');

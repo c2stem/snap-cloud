@@ -14,7 +14,9 @@ MongoClient.connect('mongodb://localhost/snapcloud', function (err, db) {
         app.use('/SnapCloud', snapServer({
             session_secret: 'SnapCloud',
             cookie_secure: false,
-            mongodb: db
+            mongodb: db,
+            mailer_from: "no-reply@c2stem.org",
+            mailer_smpt: undefined
         }));
 
         // Serve static files
