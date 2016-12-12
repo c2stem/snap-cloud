@@ -23,10 +23,10 @@ function snapServer(options) {
             apis += ' ';
         }
 
-        apis += 'Service=' + name;
-        apis += '&Parameters=' + parameters.join(',');
-        apis += '&Method=' + method;
-        apis += '&URL=' + name;
+        apis += 'Service=' + encodeURIComponent(name);
+        apis += '&Parameters=' + parameters.map(encodeURIComponent).join(',');
+        apis += '&Method=' + encodeURIComponent(method);
+        apis += '&URL=' + encodeURIComponent(name);
 
         if (handler && method === 'Get') {
             router.get('/' + name + '*', handler);
@@ -179,7 +179,7 @@ function snapServer(options) {
         }, [], {
             $set: {
                 hash: hashPassword(password),
-                modified: new Date()
+                updated: new Date()
             }
         }, function resetPwDone(err, doc) {
             if (err || !doc) {
@@ -232,7 +232,7 @@ function snapServer(options) {
             }, [], {
                 $set: {
                     hash: req.body.NewPassword,
-                    modified: new Date()
+                    updated: new Date()
                 }
             }, function changePwDone(err, doc) {
                 if (err || !doc) {
@@ -244,22 +244,170 @@ function snapServer(options) {
         }
     });
 
-    router.addSnapApi('getProjectList', [], 'Get');
-    router.addSnapApi('getProject', ['ProjectName'], 'Post');
-    router.addSnapApi('getRawProject', ['ProjectName'], 'Post');
-    router.addSnapApi('deleteProject', ['ProjectName'], 'Post');
-    router.addSnapApi('publishProject', ['ProjectName'], 'Post');
-    router.addSnapApi('unpublishProject', ['ProjectName'], 'Post');
-    router.addSnapApi('saveProject', ['ProjectName', 'SourceCode', 'Media', 'SourceSize', 'MediaSize'], 'Post');
+    router.addSnapApi('saveProject', ['ProjectName', 'SourceCode', 'Media', 'SourceSize', 'MediaSize'], 'Post', function (req, res) {
+        console.log('Save project', req.session.user, req.body.ProjectName);
 
-    router.use(function (req, res) {
+        if (typeof req.session.user !== 'string' ||
+            typeof req.body.ProjectName !== 'string' ||
+            typeof req.body.SourceCode !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            projects.update({
+                user: req.session.user,
+                name: req.body.ProjectName
+            }, {
+                $set: {
+                    updated: new Date(),
+                    data: req.body.SourceCode,
+                    media: req.body.Media
+                },
+                $setOnInsert: {
+                    public: false
+                }
+            }, {
+                upsert: true,
+                multi: false
+            }, function (err) {
+                if (err) {
+                    sendSnapError(res, 'Database error');
+                } else {
+                    res.sendStatus(200);
+                }
+            });
+        }
+    });
+
+    router.addSnapApi('getProjectList', [], 'Get', function (req, res) {
+        debug('Get project list', req.session.user);
+
+        if (typeof req.session.user !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            projects.find({
+                user: req.session.user
+            }).toArray(function (err, docs) {
+                if (err || !docs) {
+                    sendSnapError(res, 'User not found');
+                } else {
+                    res.send(docs.map(function (proj) {
+                        return 'ProjectName=' + encodeURIComponent(proj.name) +
+                            '&Updated=' + encodeURIComponent(proj.updated) +
+                            '&Notes=' + encodeURIComponent(proj.notes || '') +
+                            '&Public=' + encodeURIComponent(proj.public || false) +
+                            '&Thumbnail=' + encodeURIComponent(proj.thumbnail || '');
+                    }).join(' '));
+                }
+            });
+        }
+    });
+
+    router.addSnapApi('deleteProject', ['ProjectName'], 'Post', function (req, res) {
+        debug('Delete project', req.session.user, req.body.ProjectName);
+
+        if (typeof req.session.user !== 'string' ||
+            typeof req.body.ProjectName !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            projects.remove({
+                user: req.session.user,
+                name: req.body.ProjectName
+            }, function (err) {
+                if (err) {
+                    sendSnapError(res, 'Database error');
+                } else {
+                    res.sendStatus(200);
+                }
+            });
+        }
+    });
+
+    router.addSnapApi('publishProject', ['ProjectName'], 'Post', function (req, res) {
+        debug('Publish project', req.session.user, req.body.ProjectName);
+
+        if (typeof req.session.user !== 'string' ||
+            typeof req.body.ProjectName !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            projects.update({
+                user: req.session.user,
+                name: req.body.ProjectName
+            }, {
+                $set: {
+                    updated: new Date(),
+                    public: true
+                }
+            }, {
+                upsert: false,
+                multi: false
+            }, function (err) {
+                if (err) {
+                    sendSnapError(res, 'Database error');
+                } else {
+                    res.sendStatus(200);
+                }
+            });
+        }
+    });
+
+    router.addSnapApi('unpublishProject', ['ProjectName'], 'Post', function (req, res) {
+        debug('Unpublish project', req.session.user, req.body.ProjectName);
+
+        if (typeof req.session.user !== 'string' ||
+            typeof req.body.ProjectName !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            projects.update({
+                user: req.session.user,
+                name: req.body.ProjectName
+            }, {
+                $set: {
+                    updated: new Date(),
+                    public: false
+                }
+            }, {
+                upsert: false,
+                multi: false
+            }, function (err) {
+                if (err) {
+                    sendSnapError(res, 'Database error');
+                } else {
+                    res.sendStatus(200);
+                }
+            });
+        }
+    });
+
+    // router.addSnapApi('getProject', ['ProjectName'], 'Post');
+
+    router.addSnapApi('getRawProject', ['ProjectName'], 'Post', function (req, res) {
+        debug('Get raw project', req.session.user, req.body.ProjectName);
+
+        if (typeof req.session.user !== 'string' ||
+            typeof req.body.ProjectName !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            projects.findOne({
+                user: req.session.user,
+                name: req.body.ProjectName
+            }, function (err, doc) {
+                if (err || !doc) {
+                    console.log(err, doc);
+                    sendSnapError(res, 'Project not found');
+                } else {
+                    res.send('<snapdata>' + doc.data + doc.media + '</snapdata>');
+                }
+            });
+        }
+    });
+
+    router.use(function (req, res, next) {
         debug('Unhandled Request');
         debug('Method:', req.method);
         debug('Path:', req.path);
         debug('OriginalUrl:', req.originalUrl);
         debug('Params:', req.params);
         debug('Query:', req.query);
-        res.sendStatus(404);
+        next();
     });
 
     return router;
