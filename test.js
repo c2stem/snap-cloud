@@ -1,5 +1,5 @@
 var express = require('express');
-var snapServer = require('./snap-server');
+var snapCloud = require('./snap-cloud');
 var MongoClient = require('mongodb').MongoClient;
 
 MongoClient.connect('mongodb://localhost/snapcloud', function (err, db) {
@@ -10,8 +10,8 @@ MongoClient.connect('mongodb://localhost/snapcloud', function (err, db) {
 
         var app = express();
 
-        // Handle snap server requests
-        app.use('/SnapCloud', snapServer({
+        // Handle snap cloud requests
+        app.use('/SnapCloud', snapCloud({
             session_secret: 'SnapCloud',
             cookie_secure: false,
             mongodb: db,

@@ -1,14 +1,14 @@
 {
-  "name": "snap-server",
-  "version": "1.0.0",
-  "description": "Express extension for a Snap! (Build Your Own Blocks) server",
+  "name": "snap-cloud",
+  "version": "1.0.1",
+  "description": "Express extension for a Snap! (Build Your Own Blocks) cloud server",
   "main": "test.js",
   "scripts": {
-    "test": "DEBUG=snap-server ./node_modules/nodemon/bin/nodemon.js test.js"
+    "test": "DEBUG=snap-cloud ./node_modules/nodemon/bin/nodemon.js test.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/c2stem/snap-server.git"
+    "url": "git+https://github.com/c2stem/snap-cloud.git"
   },
   "keywords": [
     "snap",
@@ -20,9 +20,9 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/c2stem/snap-server/issues"
+    "url": "https://github.com/c2stem/snap-cloud/issues"
   },
-  "homepage": "https://github.com/c2stem/snap-server",
+  "homepage": "https://github.com/c2stem/snap-cloud",
   "dependencies": {
     "body-parser": ">=1.15.0",
     "connect-mongo": ">=1.3.0",

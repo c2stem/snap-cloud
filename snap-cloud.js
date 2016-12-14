@@ -6,12 +6,12 @@ var express = require('express'),
     onHeaders = require('on-headers'),
     MongoStore = require('connect-mongo')(session),
     cookieParser = require('cookie'),
-    debug = require('debug')('snap-server'),
+    debug = require('debug')('snap-cloud'),
     nodeMailer = require('nodemailer'),
     generatePassword = require('generate-password'),
     shaJs = require('sha.js');
 
-function snapServer(options) {
+function snapCloud(options) {
     var router = express.Router(),
         users = options.mongodb.collection('users'),
         projects = options.mongodb.collection('projects'),
@@ -413,4 +413,4 @@ function snapServer(options) {
     return router;
 }
 
-module.exports = snapServer;
+module.exports = snapCloud;
