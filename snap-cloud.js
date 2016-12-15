@@ -146,17 +146,17 @@ function snapCloud(options) {
 
     // Signup
     router.get('/SignUp', function signup(req, res) {
-        var user = req.query.Username,
+        var userName = req.query.Username,
             email = req.query.Email,
             password = generatePassword.generate({});
-        debug('Sign up', user, email);
+        debug('Sign up', userName, email);
 
-        if (!email || !user) {
+        if (!email || !userName) {
             sendSnapError(res, 'Invalid signup request');
         }
 
         users.insert({
-            _id: user,
+            _id: userName,
             email: email,
             hash: hashPassword(password),
             created: new Date()
@@ -164,19 +164,19 @@ function snapCloud(options) {
             if (err) {
                 sendSnapError(res, 'User already exists');
             } else {
-                emailPassword(res, email, user, password, "Account created");
+                emailPassword(res, email, userName, password, "Account created");
             }
         });
     });
 
     // ResetPW
     router.get('/ResetPW', function resetPw(req, res) {
-        var user = req.query.Username,
+        var userName = req.query.Username,
             password = generatePassword.generate({});
-        debug('Reset password', user);
+        debug('Reset password', userName);
 
         users.findAndModify({
-            _id: user
+            _id: userName
         }, [], {
             $set: {
                 hash: hashPassword(password),
@@ -186,26 +186,51 @@ function snapCloud(options) {
             if (err || !obj || !obj.value) {
                 sendSnapError(res, 'User not found');
             } else {
-                emailPassword(res, obj.value.email, user, password, "Password reset");
+                emailPassword(res, obj.value.email, userName, password, "Password reset");
             }
         });
     });
 
+    // RawPublic
+    router.get('/RawPublic', function rawPublic(req, res) {
+        var userName = req.query.Username,
+            projectName = req.query.ProjectName;
+        debug('Load public', userName, projectName);
+
+        if (typeof userName !== 'string' ||
+            typeof projectName !== 'string') {
+            sendSnapError(res, 'Invalid request');
+        } else {
+            projects.findOne({
+                user: userName,
+                name: projectName,
+                public: true
+            }, function (err, doc) {
+                if (err || !doc) {
+                    console.log(err, doc);
+                    sendSnapError(res, 'Project not found');
+                } else {
+                    res.send(doc.snapdata);
+                }
+            });
+        }
+    });
+
     // Login
     router.post('/', function (req, res) {
-        var user = req.body.__u,
+        var userName = req.body.__u,
             hash = req.body.__h;
-        debug('Login', user);
+        debug('Login', userName);
 
         users.findOne({
-            _id: user
+            _id: userName
         }, function (err, doc) {
             if (err || !doc) {
                 sendSnapError(res, 'User not found');
             } else if (hash !== doc.hash) {
                 sendSnapError(res, 'Invalid password');
             } else {
-                req.session.user = user;
+                req.session.user = userName;
                 res.send(apis);
             }
         });
@@ -220,19 +245,22 @@ function snapCloud(options) {
 
     // ChangePassword
     router.addSnapApi('changePassword', ['OldPassword', 'NewPassword'], 'Post', function (req, res) {
-        debug('Change password', req.session.user);
+        var userName = req.session.user,
+            oldPassword = req.body.OldPassword,
+            newPassword = req.body.NewPassword;
+        debug('Change password', userName);
 
-        if (typeof req.body.OldPassword !== 'string' ||
-            typeof req.body.NewPassword !== 'string' ||
-            typeof req.session.user !== 'string') {
+        if (typeof oldPassword !== 'string' ||
+            typeof newPassword !== 'string' ||
+            typeof userName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
             users.findAndModify({
-                _id: req.session.user,
-                hash: req.body.OldPassword
+                _id: userName,
+                hash: oldPassword
             }, [], {
                 $set: {
-                    hash: req.body.NewPassword,
+                    hash: newPassword,
                     updated: new Date()
                 }
             }, function changePwDone(err, doc) {
@@ -246,25 +274,29 @@ function snapCloud(options) {
     });
 
     router.addSnapApi('saveProject', ['ProjectName', 'SourceCode', 'Media', 'SourceSize', 'MediaSize'], 'Post', function (req, res) {
-        console.log('Save project', req.session.user, req.body.ProjectName);
+        var userName = req.session.user,
+            projectName = req.body.ProjectName,
+            sourceCode = req.body.SourceCode,
+            media = req.body.Media;
+        console.log('Save project', userName, projectName);
 
-        if (typeof req.session.user !== 'string' ||
-            typeof req.body.ProjectName !== 'string' ||
-            typeof req.body.SourceCode !== 'string' ||
-            typeof req.body.Media !== 'string') {
+        if (typeof userName !== 'string' ||
+            typeof projectName !== 'string' ||
+            typeof sourceCode !== 'string' ||
+            typeof media !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
-            parseString(req.body.SourceCode, function (err, parsed) {
+            parseString(sourceCode, function (err, parsed) {
                 if (err) {
-                    sendSnapError(res, 'Invalid source code');
+                    sendSnapError(res, 'Invalid XML data');
                 } else {
                     projects.update({
-                        user: req.session.user,
-                        name: req.body.ProjectName
+                        user: userName,
+                        name: projectName
                     }, {
                         $set: {
                             updated: new Date(),
-                            snapdata: '<snapdata>' + req.body.SourceCode + req.body.media + '</snapdata>',
+                            snapdata: '<snapdata>' + sourceCode + media + '</snapdata>',
                             notes: parsed.project.notes,
                             thumbnail: parsed.project.thumbnail,
                             origin: req.get('origin')
@@ -288,13 +320,14 @@ function snapCloud(options) {
     });
 
     router.addSnapApi('getProjectList', [], 'Get', function (req, res) {
-        debug('Get project list', req.session.user);
+        var userName = req.session.user;
+        debug('Get project list', userName);
 
-        if (typeof req.session.user !== 'string') {
+        if (typeof userName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
             projects.find({
-                user: req.session.user
+                user: userName
             }).toArray(function (err, docs) {
                 if (err || !docs) {
                     sendSnapError(res, 'User not found');
@@ -312,15 +345,17 @@ function snapCloud(options) {
     });
 
     router.addSnapApi('deleteProject', ['ProjectName'], 'Post', function (req, res) {
-        debug('Delete project', req.session.user, req.body.ProjectName);
+        var userName = req.session.user,
+            projectName = req.body.ProjectName;
+        debug('Delete project', userName, projectName);
 
-        if (typeof req.session.user !== 'string' ||
-            typeof req.body.ProjectName !== 'string') {
+        if (typeof userName !== 'string' ||
+            typeof projectName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
             projects.remove({
-                user: req.session.user,
-                name: req.body.ProjectName
+                user: userName,
+                name: projectName
             }, function (err) {
                 if (err) {
                     sendSnapError(res, 'Database error');
@@ -332,15 +367,17 @@ function snapCloud(options) {
     });
 
     router.addSnapApi('publishProject', ['ProjectName'], 'Post', function (req, res) {
-        debug('Publish project', req.session.user, req.body.ProjectName);
+        var userName = req.session.user,
+            projectName = req.body.ProjectName;
+        debug('Publish project', userName, projectName);
 
-        if (typeof req.session.user !== 'string' ||
-            typeof req.body.ProjectName !== 'string') {
+        if (typeof userName !== 'string' ||
+            typeof projectName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
             projects.update({
-                user: req.session.user,
-                name: req.body.ProjectName
+                user: userName,
+                name: projectName
             }, {
                 $set: {
                     updated: new Date(),
@@ -360,15 +397,17 @@ function snapCloud(options) {
     });
 
     router.addSnapApi('unpublishProject', ['ProjectName'], 'Post', function (req, res) {
-        debug('Unpublish project', req.session.user, req.body.ProjectName);
+        var userName = req.session.user,
+            projectName = req.body.ProjectName;
+        debug('Unpublish project', userName, projectName);
 
-        if (typeof req.session.user !== 'string' ||
-            typeof req.body.ProjectName !== 'string') {
+        if (typeof userName !== 'string' ||
+            typeof projectName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
             projects.update({
-                user: req.session.user,
-                name: req.body.ProjectName
+                user: userName,
+                name: projectName
             }, {
                 $set: {
                     updated: new Date(),
@@ -390,15 +429,17 @@ function snapCloud(options) {
     // router.addSnapApi('getProject', ['ProjectName'], 'Post');
 
     router.addSnapApi('getRawProject', ['ProjectName'], 'Post', function (req, res) {
-        debug('Get raw project', req.session.user, req.body.ProjectName);
+        var userName = req.session.user,
+            projectName = req.body.ProjectName;
+        debug('Get raw project', userName, projectName);
 
-        if (typeof req.session.user !== 'string' ||
-            typeof req.body.ProjectName !== 'string') {
+        if (typeof userName !== 'string' ||
+            typeof projectName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
             projects.findOne({
-                user: req.session.user,
-                name: req.body.ProjectName
+                user: userName,
+                name: projectName
             }, function (err, doc) {
                 if (err || !doc) {
                     console.log(err, doc);
