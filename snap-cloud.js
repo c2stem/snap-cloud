@@ -9,7 +9,8 @@ var express = require('express'),
     debug = require('debug')('snap-cloud'),
     nodeMailer = require('nodemailer'),
     generatePassword = require('generate-password'),
-    shaJs = require('sha.js');
+    shaJs = require('sha.js'),
+    parseString = require('xml2js').parseString;
 
 function snapCloud(options) {
     var router = express.Router(),
@@ -249,29 +250,38 @@ function snapCloud(options) {
 
         if (typeof req.session.user !== 'string' ||
             typeof req.body.ProjectName !== 'string' ||
-            typeof req.body.SourceCode !== 'string') {
+            typeof req.body.SourceCode !== 'string' ||
+            typeof req.body.Media !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
-            projects.update({
-                user: req.session.user,
-                name: req.body.ProjectName
-            }, {
-                $set: {
-                    updated: new Date(),
-                    data: req.body.SourceCode,
-                    media: req.body.Media
-                },
-                $setOnInsert: {
-                    public: false
-                }
-            }, {
-                upsert: true,
-                multi: false
-            }, function (err) {
+            parseString(req.body.SourceCode, function (err, parsed) {
                 if (err) {
-                    sendSnapError(res, 'Database error');
+                    sendSnapError(res, 'Invalid source code');
                 } else {
-                    res.sendStatus(200);
+                    projects.update({
+                        user: req.session.user,
+                        name: req.body.ProjectName
+                    }, {
+                        $set: {
+                            updated: new Date(),
+                            snapdata: '<snapdata>' + req.body.SourceCode + req.body.media + '</snapdata>',
+                            notes: parsed.project.notes,
+                            thumbnail: parsed.project.thumbnail,
+                            origin: req.get('origin')
+                        },
+                        $setOnInsert: {
+                            public: false
+                        }
+                    }, {
+                        upsert: true,
+                        multi: false
+                    }, function (err) {
+                        if (err) {
+                            sendSnapError(res, 'Database error');
+                        } else {
+                            res.sendStatus(200);
+                        }
+                    });
                 }
             });
         }
@@ -394,7 +404,7 @@ function snapCloud(options) {
                     console.log(err, doc);
                     sendSnapError(res, 'Project not found');
                 } else {
-                    res.send('<snapdata>' + doc.data + doc.media + '</snapdata>');
+                    res.send(doc.snapdata);
                 }
             });
         }
