@@ -126,7 +126,7 @@ function snapCloud(options) {
         return shaJs('sha512').update(password).digest('hex');
     }
 
-    function emailPassword(res, email, user, password) {
+    function emailPassword(res, email, user, password, message) {
         transport.sendMail({
             from: options.mailer_from,
             to: email,
@@ -138,7 +138,7 @@ function snapCloud(options) {
             if (err) {
                 sendSnapError(res, 'Could not send email');
             } else {
-                res.sendStatus(200);
+                res.send(message);
             }
         });
     }
@@ -163,7 +163,7 @@ function snapCloud(options) {
             if (err) {
                 sendSnapError(res, 'User already exists');
             } else {
-                emailPassword(res, email, user, password);
+                emailPassword(res, email, user, password, "Account created");
             }
         });
     });
@@ -185,7 +185,7 @@ function snapCloud(options) {
             if (err || !doc) {
                 sendSnapError(res, 'User not found');
             } else {
-                emailPassword(res, doc.value.email, user, password);
+                emailPassword(res, doc.value.email, user, password, "Password reset");
             }
         });
     });
