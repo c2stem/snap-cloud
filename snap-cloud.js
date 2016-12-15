@@ -181,11 +181,11 @@ function snapCloud(options) {
                 hash: hashPassword(password),
                 updated: new Date()
             }
-        }, function resetPwDone(err, doc) {
-            if (err || !doc) {
+        }, function resetPwDone(err, obj) {
+            if (err || !obj || !obj.value) {
                 sendSnapError(res, 'User not found');
             } else {
-                emailPassword(res, doc.value.email, user, password, "Password reset");
+                emailPassword(res, obj.value.email, user, password, "Password reset");
             }
         });
     });
