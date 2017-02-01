@@ -24,8 +24,11 @@ function start(directory, options) {
             }));
 
             if (directory) {
-                // Serve static files
+                console.log('Serving static files from ' + directory);
                 app.use(express.static(directory));
+            }
+            else {
+                console.log('Not serving static files');
             }
 
             // Start the server
