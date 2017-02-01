@@ -59,9 +59,12 @@ function snapCloud(options) {
 
     // Decode req.body fields
     router.use(bodyParser.urlencoded({
-        extended: true
+        extended: true,
+        limit: '16mb'
     }));
-    router.use(bodyParser.json());
+    router.use(bodyParser.json({
+        limit: '16mb'
+    }));
 
     function parseCookies(cookies) {
         cookies = cookies || '';
