@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 
-var program = require('commander'),
-    express = require('express'),
-    snapCloud = require('./snap-cloud'),
-    MongoClient = require('mongodb').MongoClient;
+var program = require('commander');
 
 function start(directory, options) {
+    if (options.verbose) {
+        console.log("Debugging of snap-cloud is enabled");
+        process.env['DEBUG'] += ',snap-cloud';
+    }
+
+    var express = require('express'),
+        snapCloud = require('./snap-cloud'),
+        MongoClient = require('mongodb').MongoClient;
+
     MongoClient.connect('mongodb:' + options.mongo, function (err, db) {
         if (err) {
             console.log('Could not connect to MongoDB at ' + options.mongo, err);
@@ -26,8 +32,7 @@ function start(directory, options) {
             if (directory) {
                 console.log('Serving static files from ' + directory);
                 app.use(express.static(directory));
-            }
-            else {
+            } else {
                 console.log('Not serving static files');
             }
 
@@ -41,6 +46,7 @@ function start(directory, options) {
 
 program.version('1.0.1')
     .option('-m, --mongo <uri>', 'sets MongoDB URI, defaults to //localhost/snapcloud', '//localhost/snapcloud')
+    .option('-v, --verbose', 'enable logging of snap-cloud')
     .arguments('[directory]')
     .action(start)
     .parse(process.argv);
