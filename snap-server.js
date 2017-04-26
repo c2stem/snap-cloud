@@ -29,6 +29,13 @@ function start(directory, options) {
                 mailer_smpt: undefined
             }));
 
+            if (!options.noprojects) {
+                console.log('Listing public projects at projects.html');
+                app.use('/projects.html', function (req, res) {
+                    res.sendFile(__dirname + '/projects.html');
+                });
+            }
+
             if (directory) {
                 console.log('Serving static files from ' + directory);
                 app.use(express.static(directory));
@@ -37,16 +44,19 @@ function start(directory, options) {
             }
 
             // Start the server
-            app.listen(8080, function () {
-                console.log('Listening on port 8080');
+            options.port = +options.port || 8080;
+            app.listen(options.port, function () {
+                console.log('Listening on port ' + options.port);
             });
         }
     });
 }
 
-program.version('1.0.1')
-    .option('-m, --mongo <uri>', 'sets MongoDB URI, defaults to //localhost/snapcloud', '//localhost/snapcloud')
+program.version('1.0.2')
+    .option('-m, --mongo <uri>', 'sets MongoDB URI [//localhost/snapcloud]', '//localhost/snapcloud')
     .option('-v, --verbose', 'enable logging of snap-cloud')
+    .option('-p, --port <n>', 'port number to use [8080]', 8080)
+    .option('-n, --noprojects', 'disable the listing of public projects')
     .arguments('[directory]')
     .action(start)
     .parse(process.argv);

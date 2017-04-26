@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Public Snap Projects</title>
+    <style>
+        body {
+            background-color: #ceebfd;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        div.project {
+            float: left;
+            width: 200px;
+            height: 200px;
+            margin: 20px;
+            border-radius: 15px;
+            box-shadow: 2px 2px black;
+            background-color: grey;
+            text-align: center;
+        }
+
+        div.project img {
+            display: block;
+            margin: 5%;
+            width: 90%;
+            height: 70%;
+        }
+
+        div.project p {
+            margin: 5%;
+            height: 10%;
+            width: 90%;
+            font-size: 20px;
+            font-family: 'Lato';
+            color: #ffffff;
+        }
+
+    </style>
+</head>
+
+<body>
+    <h1>Public Snap Projects</h1>
+    <div id="grid">
+    </div>
+</body>
+
+<script>
+    function parseResponse(response) {
+        var list = [];
+        if (response) {
+            response.split(' ').forEach(function (service) {
+                var entries = service.split('&'),
+                    dict = {};
+                entries.forEach(function (entry) {
+                    var pair = entry.split('='),
+                        key = decodeURIComponent(pair[0]),
+                        val = decodeURIComponent(pair[1]);
+                    dict[key] = val;
+                });
+                if (dict.Updated) {
+                    dict.Updated = new Date(dict.Updated);
+                }
+                list.push(dict);
+            });
+        }
+        return list;
+    }
+
+    function loadProjects(page) {
+        try {
+            page = typeof page === 'number' ? +page : 0;
+            var request = new XMLHttpRequest();
+            request.open('GET', '/SnapCloud/PublicProjects?page=' + page, true);
+            request.withCredentials = true;
+            request.onreadystatechange = function () {
+                if (request.readyState === 4) {
+                    updateTable(parseResponse(request.responseText));
+                }
+            };
+            request.send(null);
+
+        } catch (err) {
+            console.log('Could not load projects');
+        }
+    }
+
+    function updateTable(projects) {
+        var grid = document.getElementById('grid');
+        console.log(grid);
+        projects.forEach(function (project) {
+            console.log(project);
+            var a = document.createElement('a');
+            var title = '';
+            if (project.Notes) {
+                title += project.Notes + '\n';
+            }
+            title += 'created by ' + project.User;
+            if (project.Updated) {
+                title += ' at ' + project.Updated.getFullYear() + '/' +
+                    project.Updated.getMonth() + '/' +
+                    project.Updated.getDay();
+            }
+            a.title = title;
+            a.href = window.location.origin + '/snap.html#present:' +
+                'Username=' + encodeURIComponent(project.User) +
+                '&ProjectName=' + encodeURIComponent(project.ProjectName) +
+                '&editMode&noRun';
+
+            var div = document.createElement('div');
+            div.className = 'project';
+            a.appendChild(div);
+
+            var image = new Image();
+            image.src = project.Thumbnail;
+            div.appendChild(image);
+
+            var title = document.createElement('p');
+            title.textContent = project.ProjectName;
+            div.appendChild(title);
+
+            grid.appendChild(a);
+        });
+    }
+
+    window.onload = function () {
+        loadProjects(0);
+    }
+
+</script>
+
+</html>

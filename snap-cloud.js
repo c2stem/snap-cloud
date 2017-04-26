@@ -239,6 +239,30 @@ function snapCloud(options) {
         });
     });
 
+    // PublicProjects
+    router.get('/PublicProjects', function publicProjects(req, res) {
+        var page = parseInt(req.query.page || 0);
+        debug('Public projects page ', page);
+
+        projects.find({
+            public: true
+        }).skip(page * 20).limit(20).toArray(function (err, docs) {
+            if (err || !docs) {
+                debug('Database error ' + err);
+                res.send('ERROR');
+            } else {
+                debug('Returned ' + docs.length + ' projects');
+                res.send(docs.map(function (proj) {
+                    return 'ProjectName=' + encodeURIComponent(proj.name) +
+                        '&Updated=' + encodeURIComponent(proj.updated.toJSON()) +
+                        '&Notes=' + encodeURIComponent(proj.notes || '') +
+                        '&User=' + encodeURIComponent(proj.user || '') +
+                        '&Thumbnail=' + encodeURIComponent(proj.thumbnail || '');
+                }).join(' '));
+            }
+        });
+    });
+
     // Logout
     router.addSnapApi('logout', [], 'Get', function (req, res) {
         debug('Logout', req.session.user);
