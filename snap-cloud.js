@@ -242,13 +242,13 @@ function snapCloud(options) {
     // PublicProjects
     router.get('/PublicProjects', function publicProjects(req, res) {
         var page = parseInt(req.query.page || 0);
-        debug('Public projects page ', page);
+        debug('Public projects page', page);
 
         projects.find({
             public: true
         }).skip(page * 20).limit(20).toArray(function (err, docs) {
             if (err || !docs) {
-                debug('Database error ' + err);
+                debug('Database error', err);
                 res.send('ERROR');
             } else {
                 debug('Returned ' + docs.length + ' projects');
