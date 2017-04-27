@@ -257,6 +257,7 @@ function snapCloud(options) {
                         '&Updated=' + encodeURIComponent(proj.updated.toJSON()) +
                         '&Notes=' + encodeURIComponent(proj.notes || '') +
                         '&User=' + encodeURIComponent(proj.user || '') +
+                        '&Origin=' + encodeURIComponent(proj.origin || '') +
                         '&Thumbnail=' + encodeURIComponent(proj.thumbnail || '');
                 }).join(' '));
             }
@@ -317,17 +318,22 @@ function snapCloud(options) {
                 if (err) {
                     sendSnapError(res, 'Invalid XML data');
                 } else {
-                    projects.update({
-                        user: userName,
-                        name: projectName
-                    }, {
-                        $set: {
+                    var fields = {
                             updated: new Date(),
                             snapdata: '<snapdata>' + sourceCode + media + '</snapdata>',
                             notes: parsed.project.notes,
                             thumbnail: parsed.project.thumbnail,
-                            origin: req.get('origin')
                         },
+                        origin = req.get('origin');
+                    if (origin.search('^https?:\/\/localhost(:[0-9]*)?$') !== 0) {
+                        fields.origin = origin;
+                    }
+
+                    projects.update({
+                        user: userName,
+                        name: projectName
+                    }, {
+                        $set: fields,
                         $setOnInsert: {
                             public: false
                         }

@@ -50,6 +50,8 @@
 </body>
 
 <script>
+    var grid = document.getElementById('grid');
+
     function parseResponse(response) {
         var list = [];
         if (response) {
@@ -79,18 +81,27 @@
             request.withCredentials = true;
             request.onreadystatechange = function () {
                 if (request.readyState === 4) {
-                    updateTable(parseResponse(request.responseText));
+                    if (request.status === 200) {
+                        updateTable(parseResponse(request.responseText));
+                    } else {
+                        reportError(request.statusText);
+                    }
                 }
             };
             request.send(null);
 
         } catch (err) {
-            console.log('Could not load projects');
+            reportError('Could not connect');
         }
     }
 
+    function reportError(error) {
+        var p = document.createElement('p');
+        p.textContent = 'Error: ' + error;
+        grid.appendChild(p);
+    }
+
     function updateTable(projects) {
-        var grid = document.getElementById('grid');
         projects.forEach(function (project) {
             var a = document.createElement('a');
             var title = '';
@@ -104,7 +115,7 @@
                     project.Updated.getDay();
             }
             a.title = title;
-            a.href = window.location.origin + '/snap.html#present:' +
+            a.href = project.Origin + '/snap.html#present:' +
                 'Username=' + encodeURIComponent(project.User) +
                 '&ProjectName=' + encodeURIComponent(project.ProjectName) +
                 '&editMode&noRun';
