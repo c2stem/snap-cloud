@@ -104,16 +104,17 @@
     function updateTable(projects) {
         projects.forEach(function (project) {
             var a = document.createElement('a');
-            var title = '';
+            var title = ''
             if (project.Notes) {
                 title += project.Notes + '\n';
             }
             title += 'created by ' + project.User;
             if (project.Updated) {
                 title += ' at ' + project.Updated.getFullYear() + '/' +
-                    project.Updated.getMonth() + '/' +
-                    project.Updated.getDay();
+                    (project.Updated.getMonth() + 1) + '/' +
+                    project.Updated.getDate();
             }
+            title += '\n' + project.Origin;
             a.title = title;
             a.href = project.Origin + '/snap.html#present:' +
                 'Username=' + encodeURIComponent(project.User) +
