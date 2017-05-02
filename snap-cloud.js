@@ -306,7 +306,7 @@ function snapCloud(options) {
             projectName = req.body.ProjectName,
             sourceCode = req.body.SourceCode,
             media = req.body.Media;
-        console.log('Save project', userName, projectName);
+        debug('Save project', userName, projectName);
 
         if (typeof userName !== 'string' ||
             typeof projectName !== 'string' ||
