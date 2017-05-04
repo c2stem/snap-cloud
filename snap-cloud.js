@@ -249,7 +249,7 @@ function snapCloud(options) {
 
         debug('Public projects page', page);
         if (searchText) {
-            var allFields = ['name', 'user', 'origin', 'snapdata'];
+            var allFields = ['name', 'user', 'origin', 'notes'];
 
             if (!searchText.includes(':')) {  // search ALL text
                 query.$or = allFields.map(field => {
