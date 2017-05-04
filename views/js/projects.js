@@ -47,8 +47,7 @@ function loadProjects(page) {
     try {
         page = typeof page === 'number' ? +page : 0;
         var request = new XMLHttpRequest();
-        // FIXME:
-        request.open('GET', 'http://cloud.c2stem.org/SnapCloud/PublicProjects?page=' + page, true);
+        request.open('GET', '/SnapCloud/PublicProjects?page=' + page, true);
         request.withCredentials = true;
         request.onreadystatechange = function () {
             if (request.readyState === 4) {

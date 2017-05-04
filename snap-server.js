@@ -31,9 +31,7 @@ function start(directory, options) {
 
             if (!options.noprojects) {
                 console.log('Listing public projects at projects.html');
-                app.use('/projects.html', function (req, res) {
-                    res.sendFile(__dirname + '/projects.html');
-                });
+                app.use(express.static(__dirname + '/views/'));
             }
 
             if (directory) {
