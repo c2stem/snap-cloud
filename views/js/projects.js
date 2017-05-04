@@ -46,8 +46,14 @@ function loadProjects(page) {
 
     try {
         page = typeof page === 'number' ? +page : 0;
-        var request = new XMLHttpRequest();
-        request.open('GET', '/SnapCloud/PublicProjects?page=' + page, true);
+        var request = new XMLHttpRequest(),
+            url;
+
+        url = '/SnapCloud/PublicProjects?page=' + page;
+        if (searchFilter) {
+            url += '&search=' + encodeURIComponent(searchFilter);
+        }
+        request.open('GET', url, true);
         request.withCredentials = true;
         request.onreadystatechange = function () {
             if (request.readyState === 4) {
@@ -61,14 +67,12 @@ function loadProjects(page) {
         request.send(null);
 
     } catch (err) {
-        reportError('Could not connect');
+        reportError('Could not connect to SnapCloud');
     }
 }
 
 function reportError(error) {
-    var p = document.createElement('p');
-    p.textContent = 'Error: ' + error;
-    projectIndex.appendChild(p);
+    Materialize.toast('Error: ' + error);
 }
 
 function updateProjectList(projects) {
