@@ -249,15 +249,25 @@ function snapCloud(options) {
 
         debug('Public projects page', page);
         if (searchText) {
-            query['$text'] = {
-                $search: searchText
-            };
+            // Check the ProjectNotes, ProjectName, user's name
+            query.$or = ['name', 'user', 'origin', 'snapdata'].map(field => {
+                var subquery = {};
+
+                subquery[field] = {
+                    $regex: new RegExp(searchText, 'im')
+                };
+
+                return subquery;
+            });
+
+            console.log('query is', query);
         }
 
         return projects.find(query)
             .skip(page * 20).limit(20)
             .toArray().then(function (docs) {
                 debug('Returned ' + docs.length + ' projects');
+                console.log(docs);
                 res.send(docs.map(function (proj) {
                     return 'ProjectName=' + encodeURIComponent(proj.name) +
                         '&Updated=' + encodeURIComponent(proj.updated.toJSON()) +
