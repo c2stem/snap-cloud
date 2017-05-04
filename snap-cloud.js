@@ -249,16 +249,35 @@ function snapCloud(options) {
 
         debug('Public projects page', page);
         if (searchText) {
-            // Check the ProjectNotes, ProjectName, user's name
-            query.$or = ['name', 'user', 'origin', 'snapdata'].map(field => {
-                var subquery = {};
+            var allFields = ['name', 'user', 'origin', 'snapdata'];
 
-                subquery[field] = {
-                    $regex: new RegExp(searchText, 'im')
-                };
+            if (!searchText.includes(':')) {  // search ALL text
+                query.$or = allFields.map(field => {
+                    var subquery = {};
 
-                return subquery;
-            });
+                    subquery[field] = {
+                        $regex: new RegExp(searchText, 'im')
+                    };
+
+                    return subquery;
+                });
+            } else {  // search the given fields
+                var content,
+                    fieldAndSearch = [],
+                    field;
+
+                content = searchText.split(':')
+                    .map(field => field.replace(/^\s*/, '').replace(/\s*$/, ''));
+
+                for (var i = 0; i < content.length; i+=2) {
+                    field = content[i].toLowerCase();
+                    if (allFields.includes(field) && content[i+1]) {  // has a value
+                        query[field] = {
+                            $regex: new RegExp(content[i+1], 'im')
+                        };
+                    }
+                }
+            }
 
             console.log('query is', query);
         }
