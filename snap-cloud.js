@@ -241,16 +241,22 @@ function snapCloud(options) {
 
     // PublicProjects
     router.get('/PublicProjects', function publicProjects(req, res) {
-        var page = parseInt(req.query.page || 0);
-        debug('Public projects page', page);
+        var page = parseInt(req.query.page || 0),
+            searchText = req.query.search || null,
+            query = {
+                public: true
+            };
 
-        projects.find({
-            public: true
-        }).skip(page * 20).limit(20).toArray(function (err, docs) {
-            if (err || !docs) {
-                debug('Database error', err);
-                res.send('ERROR');
-            } else {
+        debug('Public projects page', page);
+        if (searchText) {
+            query['$text'] = {
+                $search: searchText
+            };
+        }
+
+        return projects.find(query)
+            .skip(page * 20).limit(20)
+            .toArray().then(function (docs) {
                 debug('Returned ' + docs.length + ' projects');
                 res.send(docs.map(function (proj) {
                     return 'ProjectName=' + encodeURIComponent(proj.name) +
@@ -260,8 +266,12 @@ function snapCloud(options) {
                         '&Origin=' + encodeURIComponent(proj.origin || '') +
                         '&Thumbnail=' + encodeURIComponent(proj.thumbnail || '');
                 }).join(' '));
-            }
-        });
+            })
+            .catch(err => {
+                debug('Database error', err);
+                return res.send('ERROR: ' + err);
+            });
+                    
     });
 
     // Logout
