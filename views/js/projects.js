@@ -92,30 +92,6 @@ function updateProjectList(projects) {
 
         window.location = url;
     });
-    /*
-        var a = document.createElement('a');
-        var title = ''
-        if (project.Notes) {
-            title += project.Notes + '\n';
-        }
-        a.title = title;
-        a.href =
-
-        var div = document.createElement('div');
-        div.className = 'project';
-        a.appendChild(div);
-
-        var image = new Image();
-        image.src = project.Thumbnail;
-        div.appendChild(image);
-
-        var title = document.createElement('p');
-        title.textContent = project.ProjectName;
-        div.appendChild(title);
-
-        projectIndex.appendChild(a);
-    });
-    */
 }
 
 window.onload = function () {
