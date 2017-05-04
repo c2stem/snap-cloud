@@ -6,12 +6,12 @@ var projectIndex = $('#project-index'),
 // TODO: Add more pages
 
 // Search for projects matching the given query after typing
-searchbar.keydown(function(event) {
+searchbar.keydown(function (event) {
     if (searchFnId) {
         clearTimeout(searchFnId);
     }
 
-    searchFnId = setTimeout(function() {
+    searchFnId = setTimeout(function () {
         loadProjects(0);
     }, SEARCH_DELAY);
 });
@@ -38,11 +38,11 @@ function parseResponse(response) {
 }
 
 function loadProjects(page) {
-
     // Get the search filter
     var searchFilter = searchbar.val();
-
-    if (searchFilter) console.log('loading projects with:', searchFilter);
+    if (searchFilter) {
+        console.log('loading projects with:', searchFilter);
+    }
 
     try {
         page = typeof page === 'number' ? +page : 0;
@@ -113,7 +113,7 @@ function updateProjectList(projects) {
     projectIndex.append('<div class="row">' + cards.join('') + '</div>');
 
     // Click the card for opening the url
-    $('.project-thumbnail').on('click', function(event) {
+    $('.project-thumbnail').on('click', function (event) {
         var element = event.currentTarget,
             url = element.getAttribute('data-url');
 
@@ -123,4 +123,4 @@ function updateProjectList(projects) {
 
 window.onload = function () {
     loadProjects(0);
-}
+};
