@@ -204,8 +204,11 @@ function snapCloud(options) {
             typeof projectName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
+            console.log(userName, projectName);
             projects.findOne({
-                user: userName,
+                user: { // HACK: username is sent in lowercase 
+                    $regex: new RegExp('^' + userName + '$', 'i')
+                },
                 name: projectName,
                 public: true
             }, function (err, doc) {
