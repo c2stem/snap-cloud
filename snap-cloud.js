@@ -247,11 +247,11 @@ function snapCloud(options) {
                 public: true
             };
 
-        debug('Public projects page', page);
+        debug('Public projects page', page, searchText);
         if (searchText) {
             var allFields = ['name', 'user', 'origin', 'notes'];
 
-            if (!searchText.includes(':')) {  // search ALL text
+            if (!searchText.includes(':')) { // search ALL text
                 query.$or = allFields.map(field => {
                     var subquery = {};
 
@@ -261,7 +261,7 @@ function snapCloud(options) {
 
                     return subquery;
                 });
-            } else {  // search the given fields
+            } else { // search the given fields
                 var content,
                     fieldAndSearch = [],
                     field;
@@ -269,24 +269,22 @@ function snapCloud(options) {
                 content = searchText.split(':')
                     .map(field => field.replace(/^\s*/, '').replace(/\s*$/, ''));
 
-                for (var i = 0; i < content.length; i+=2) {
+                for (var i = 0; i < content.length; i += 2) {
                     field = content[i].toLowerCase();
-                    if (allFields.includes(field) && content[i+1]) {  // has a value
+                    if (allFields.includes(field) && content[i + 1]) { // has a value
                         query[field] = {
-                            $regex: new RegExp(content[i+1], 'im')
+                            $regex: new RegExp(content[i + 1], 'im')
                         };
                     }
                 }
             }
-
-            console.log('query is', query);
+            debug('Query is', query);
         }
 
         return projects.find(query)
             .skip(page * 20).limit(20)
             .toArray().then(function (docs) {
                 debug('Returned ' + docs.length + ' projects');
-                console.log(docs);
                 res.send(docs.map(function (proj) {
                     return 'ProjectName=' + encodeURIComponent(proj.name) +
                         '&Updated=' + encodeURIComponent(proj.updated.toJSON()) +
@@ -300,7 +298,7 @@ function snapCloud(options) {
                 debug('Database error', err);
                 return res.send('ERROR: ' + err);
             });
-                    
+
     });
 
     // Logout
