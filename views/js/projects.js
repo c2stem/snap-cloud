@@ -40,9 +40,6 @@ function parseResponse(response) {
 function loadProjects(page) {
     // Get the search filter
     var searchFilter = searchbar.val();
-    if (searchFilter) {
-        console.log('loading projects with:', searchFilter);
-    }
 
     try {
         page = typeof page === 'number' ? +page : 0;
@@ -60,12 +57,11 @@ function loadProjects(page) {
                 if (request.status === 200) {
                     updateProjectList(parseResponse(request.responseText));
                 } else {
-                    reportError(request.statusText);
+                    reportError(request.responseText || 'Connection refused');
                 }
             }
         };
-        request.send(null);
-
+        request.send();
     } catch (err) {
         reportError('Could not connect to SnapCloud');
     }
