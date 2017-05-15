@@ -225,21 +225,30 @@ function snapCloud(options) {
     // Login
     router.post('/', function (req, res) {
         var userName = req.body.__u,
-            hash = req.body.__h;
-        debug('Login', userName);
+            hash = req.body.__h,
+            remember = req.body.remember;
+        debug('Login', userName, remember);
 
-        users.findOne({
-            _id: userName
-        }, function (err, doc) {
-            if (err || !doc) {
-                sendSnapError(res, 'User not found');
-            } else if (hash !== doc.hash) {
-                sendSnapError(res, 'Invalid password');
-            } else {
-                req.session.user = userName;
+        if (!userName && !hash) {
+            if (req.session.user) {
                 res.send(apis);
+            } else {
+                sendSnapError(res, 'Not logged in');
             }
-        });
+        } else {
+            users.findOne({
+                _id: userName
+            }, function (err, doc) {
+                if (err || !doc) {
+                    sendSnapError(res, 'User not found');
+                } else if (hash !== doc.hash) {
+                    sendSnapError(res, 'Invalid password');
+                } else {
+                    req.session.user = userName;
+                    res.send(apis);
+                }
+            });
+        }
     });
 
     // PublicProjects
