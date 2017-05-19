@@ -7,17 +7,18 @@ var express = require('express'),
     MongoStore = require('connect-mongo')(session),
     cookieParser = require('cookie'),
     debug = require('debug')('snap-cloud'),
-    nodeMailer = require('nodemailer'),
-    generatePassword = require('generate-password'),
     shaJs = require('sha.js'),
     parseString = require('xml2js').parseString;
 
 function snapCloud(options) {
     var router = express.Router(),
-        users = options.mongodb.collection('users'),
+        users = require('./src/users'),
         projects = options.mongodb.collection('projects'),
-        transport = nodeMailer.createTransport(options.mailer_smpt),
+        //projects = require('./src/projects'),
         apis = '';
+
+    users.init(options.mongodb, options.mailer_smpt);
+    //projects.init(options.mongodb);
 
     router.addSnapApi = function addSnapApi(name, parameters, method, handler) {
         if (apis) {
@@ -130,83 +131,39 @@ function snapCloud(options) {
         return shaJs('sha512').update(password).digest('hex');
     }
 
-    function emailPassword(res, email, user, password, message) {
-        transport.sendMail({
-            from: options.mailer_from,
-            to: email,
-            subject: 'Temporary Password',
-            text: 'Hello ' + user +
-                '!\n\nYour Snap password has been temporarily set to: ' +
-                password + '. Please change it after logging in.'
-        }, function (err) {
-            if (err) {
-                sendSnapError(res, 'Could not send email');
-            } else {
-                res.send(message);
-            }
-        });
-    }
-
     // Signup
     router.get('/SignUp', function signup(req, res) {
         var userName = req.query.Username,
-            email = req.query.Email,
-            password = generatePassword.generate({});
+            email = req.query.Email;
+
         debug('Sign up', userName, email);
 
         if (!email || !userName) {
             sendSnapError(res, 'Invalid signup request');
         } else {
-            users.update({
-                _id: userName,
-                email: email
-            }, {
-                $set: {
-                    hash: hashPassword(password),
-                    updated: new Date()
-                },
-                $setOnInsert: {
-                    created: new Date()
-                }
-            }, {
-                upsert: true,
-                multi: false
-            }, function signupDone(err) {
-                if (err) {
-                    sendSnapError(res, 'Could not create user');
-                } else {
-                    emailPassword(res, email, userName, password, "Account created");
-                }
-            });
+            return users.new(userName, email)
+                .then(() => res.send('Account created'))
+                .catch(err => sendSnapError(res, 'Could not create user'));
         }
     });
 
     // ResetPW
     router.get('/ResetPW', function resetPw(req, res) {
-        var userName = req.query.Username,
-            password = generatePassword.generate({});
+        var userName = req.query.Username;
+
         debug('Reset password', userName);
 
-        users.findAndModify({
-            _id: userName
-        }, [], {
-            $set: {
-                hash: hashPassword(password),
-                updated: new Date()
-            }
-        }, function resetPwDone(err, obj) {
-            if (err || !obj || !obj.value) {
-                sendSnapError(res, 'User not found');
-            } else {
-                emailPassword(res, obj.value.email, userName, password, "Password reset");
-            }
-        });
+        return users.setPassword(userName)
+            .then(() => res.send('Password reset'))
+            .catch(err => sendSnapError(res, 'User not found'));
+
     });
 
     // RawPublic
     router.get('/RawPublic', function rawPublic(req, res) {
         var userName = req.query.Username,
             projectName = req.query.ProjectName;
+
         debug('Load public', userName, projectName);
 
         if (typeof userName !== 'string' ||
@@ -245,18 +202,18 @@ function snapCloud(options) {
                 sendSnapError(res, 'Not logged in');
             }
         } else {
-            users.findOne({
-                _id: userName
-            }, function (err, doc) {
-                if (err || !doc) {
-                    sendSnapError(res, 'User not found');
-                } else if (hash !== doc.hash) {
-                    sendSnapError(res, 'Invalid password');
-                } else {
-                    req.session.user = userName;
-                    res.send(apis);
-                }
-            });
+            return users.get(userName)
+                .then(user => {
+                    if (!user) {
+                        sendSnapError(res, 'User not found');
+                    } else if (hash !== user.hash) {
+                        sendSnapError(res, 'Invalid password');
+                    } else {
+                        req.session.user = userName;
+                        res.send(apis);
+                    }
+                })
+                .catch(err => sendSnapError(res, 'User not found'));
         }
     });
 
@@ -341,21 +298,9 @@ function snapCloud(options) {
             typeof userName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
-            users.findAndModify({
-                _id: userName,
-                hash: oldPassword
-            }, [], {
-                $set: {
-                    hash: newPassword,
-                    updated: new Date()
-                }
-            }, function changePwDone(err, doc) {
-                if (err || !doc) {
-                    sendSnapError(res, 'Invalid password');
-                } else {
-                    res.sendStatus(200);
-                }
-            });
+            return users.setPassword(userName, oldPassword, password)
+                .then(() => res.sendStatus(200))
+                .catch(err => sendSnapError(res, 'Invalid password'));
         }
     });
 
