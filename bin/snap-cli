@@ -1,0 +1,79 @@
+#! /usr/bin/env node
+
+// fn-ality to support
+//  - list users
+//  - add user
+//  - delete user
+
+var program = require('commander'),
+    version = require('../package.json'),
+    MongoClient = require('mongodb').MongoClient,
+    users = require('../src/users'),
+    mongoUri;
+
+mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/snapcloud';
+program.version(version);
+
+program
+    .command('list-users')
+    .action(function() {
+        return MongoClient.connect(mongoUri)
+            .then(db => {
+                users.init(db);
+
+                var stream = users.all();
+                stream.on('error', err => {
+                    console.error('Error:', err);
+                    db.close();
+                });
+
+                stream.on('data', doc => {
+                    console.log(doc._id);
+                });
+
+                stream.on('end', () => db.close());
+            })
+            .catch(err => {
+                console.error('Could not connect to database:', err);
+            });
+    });
+
+program
+    .command('list-projects', 'list all user projects')
+    .action(function() {
+        console.log('listing projects...');
+        // TODO
+    });
+
+program
+    .command('delete-project <user> <project>', 'delete project')
+    .action(function() {
+        console.log('listing projects...');
+        // TODO
+    });
+
+program
+    .command('delete-user <user>', 'delete user')
+    .action(function() {
+        // TODO
+    });
+
+program
+    .command('add-user <user> <password>', 'add new user with the given username and password')
+    .action(function() {
+        // TODO
+    });
+
+program
+    .command('set-email <user> <email>')
+    .action(function() {
+        // TODO
+    });
+
+program
+    .command('set-password <user> <password>')
+    .action(function() {
+        // TODO
+    });
+
+program.parse(process.argv);
