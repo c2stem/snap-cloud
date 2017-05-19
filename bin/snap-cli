@@ -17,7 +17,8 @@ program.version(version);
 
 program
     .command('list-users')
-    .action(function() {
+    .option('-l,--long')
+    .action(function(opts) {
         return MongoClient.connect(mongoUri)
             .then(db => {
                 users.init(db);
@@ -29,7 +30,15 @@ program
                 });
 
                 stream.on('data', doc => {
-                    console.log(doc._id);
+                    if (opts.long) {
+                        console.log([
+                            doc._id,
+                            doc.email,
+                            doc.updated
+                        ].join('\t\t'));
+                    } else {
+                        console.log(doc._id);
+                    }
                 });
 
                 stream.on('end', () => db.close());
@@ -79,7 +88,7 @@ program
     });
 
 program
-    .command('set-email <user> <email>')
+    .command('set-email <username> <email>')
     .action(function() {
         // TODO
     });

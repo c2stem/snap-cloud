@@ -69,6 +69,22 @@
             .then(result => result.deletedCount > 0);
     };
 
+    Users.setEmail = function(username, email) {
+        return collection.findOne({email: email})
+            .then(match => {
+                if (match) {
+                    throw Error('email address is already taken');
+                }
+
+                return collection.findAndModify({_id: username}, [], {
+                    $set: {
+                        email: email,
+                        updated: new Date()
+                    }
+                });
+            });
+    };
+
     Users.setPassword = function(username, password, oldPassword) {
         var query = {_id: username},
             sendEmail,
