@@ -89,8 +89,16 @@ program
 
 program
     .command('set-email <username> <email>')
-    .action(function() {
-        // TODO
+    .action(function(username, email) {
+        return MongoClient.connect(mongoUri)
+            .then(db => {
+                users.init(db);
+
+                return users.setEmail(username, email)
+                    .then(() => db.close());
+            })
+            .then(() => console.log('user updated!'))
+            .catch(err => console.error('Could not set email:', err))
     });
 
 program
