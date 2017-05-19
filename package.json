@@ -4,6 +4,7 @@
   "description": "Express extension for a Snap! (Build Your Own Blocks) cloud server",
   "main": "snap-server.js",
   "scripts": {
+    "test-serv": "mocha --recursive test/",
     "test": "DEBUG=snap-cloud ./node_modules/nodemon/bin/nodemon.js snap-server.js",
     "start": "node snap-server.js"
   },

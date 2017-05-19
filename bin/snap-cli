@@ -9,6 +9,7 @@ var program = require('commander'),
     version = require('../package.json'),
     MongoClient = require('mongodb').MongoClient,
     users = require('../src/users'),
+    sha = require('sha.js'),
     mongoUri;
 
 mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/snapcloud';
@@ -39,6 +40,68 @@ program
     });
 
 program
+    .command('delete-user <username>')
+    .action(function(username) {
+        return MongoClient.connect(mongoUri)
+            .then(db => {
+                users.init(db);
+
+                return users.remove(username)
+                    .then(deleted => {
+                        if (deleted) {
+                            console.log('user deleted!');
+                        } else {
+                            console.log('user not found');
+                        }
+                        return db.close();
+                    });
+            })
+            .catch(err => {
+                console.error('Could not connect to database:', err);
+            });
+    });
+
+program
+    .command('add-user <username> <email>')
+    .description('add new user with the given username and password')
+    .action(function(username, email) {
+        return MongoClient.connect(mongoUri)
+            .then(db => {
+                users.init(db);
+
+                return users.new(username, email)
+                    .then(() => db.close());
+            })
+            .then(() => console.log('user created!'))
+            .catch(err => {
+                console.error('Could not connect to database:', err);
+            });
+    });
+
+program
+    .command('set-email <user> <email>')
+    .action(function() {
+        // TODO
+    });
+
+program
+    .command('set-password <username> <password>')
+    .action(function(username, password) {
+        return MongoClient.connect(mongoUri)
+            .then(db => {
+                users.init(db);
+
+                var hash = sha('sha512').update(password).digest('hex');
+                return users.setPassword(username, hash)
+                    .then(() => db.close());
+            })
+            .then(() => console.log('password updated!'))
+            .catch(err => {
+                console.error('Could not connect to database:', err);
+            });
+    });
+
+program
     .command('list-projects', 'list all user projects')
     .action(function() {
         console.log('listing projects...');
@@ -49,30 +112,6 @@ program
     .command('delete-project <user> <project>', 'delete project')
     .action(function() {
         console.log('listing projects...');
-        // TODO
-    });
-
-program
-    .command('delete-user <user>', 'delete user')
-    .action(function() {
-        // TODO
-    });
-
-program
-    .command('add-user <user> <password>', 'add new user with the given username and password')
-    .action(function() {
-        // TODO
-    });
-
-program
-    .command('set-email <user> <email>')
-    .action(function() {
-        // TODO
-    });
-
-program
-    .command('set-password <user> <password>')
-    .action(function() {
         // TODO
     });
 

@@ -1,12 +1,18 @@
 (function(Users) {
     var generatePassword = require('generate-password');
     var nodeMailer = require('nodemailer');
+    var shaJs = require('sha.js');
+    var mailer_from = "no-reply@c2stem.org";
     var transport;
     var collection;
 
+    function hashPassword(password) {
+        return shaJs('sha512').update(password).digest('hex');
+    }
+
     function emailPassword(email, user, password) {
         return transport.sendMail({
-                from: options.mailer_from,
+                from: mailer_from,
                 to: email,
                 subject: 'Temporary Password',
                 text: 'Hello ' + user +
@@ -21,16 +27,16 @@
     Users.init = function(db, mailerOpts) {
         collection = db.collection('users');
 
-        if (mailerOpts) {
-            transport = nodeMailer.createTransport(mailerOpts);
-        }
+        mailerOpts = mailerOpts || {};
+        transport = nodeMailer.createTransport(mailerOpts.mailer_smpt);
+        mailer_from = mailerOpts.mailer_from || mailer_from;
     };
 
-    Users.new = function(name, email, silent) {
+    Users.new = function(username, email, silent) {
         var password = generatePassword.generate({});
 
         return collection.update({
-            _id: userName,
+            _id: username,
             email: email
         }, {
             $set: {
@@ -46,7 +52,7 @@
         })
         .then(user => {
             if (!silent) {
-                return emailPassword(email, userName, password);
+                return emailPassword(email, username, password);
             }
         });
 
@@ -54,8 +60,13 @@
 
     Users.get = function(username) {
         return collection.findOne({
-            _id: userName
+            _id: username
         });
+    };
+
+    Users.remove = function(username) {
+        return collection.deleteOne({_id: username})
+            .then(result => result.deletedCount > 0);
     };
 
     Users.setPassword = function(username, password, oldPassword) {

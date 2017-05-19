@@ -7,7 +7,6 @@ var express = require('express'),
     MongoStore = require('connect-mongo')(session),
     cookieParser = require('cookie'),
     debug = require('debug')('snap-cloud'),
-    shaJs = require('sha.js'),
     parseString = require('xml2js').parseString;
 
 function snapCloud(options) {
@@ -126,10 +125,6 @@ function snapCloud(options) {
             htmlOnly: false
         }
     }));
-
-    function hashPassword(password) {
-        return shaJs('sha512').update(password).digest('hex');
-    }
 
     // Signup
     router.get('/SignUp', function signup(req, res) {
