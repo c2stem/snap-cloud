@@ -9,6 +9,7 @@
     "start": "node snap-server.js"
   },
   "bin": {
+    "snap-cli": "./bin/snap-cli",
     "snap-server": "./snap-server.js"
   },
   "repository": {
