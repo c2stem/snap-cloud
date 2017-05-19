@@ -98,7 +98,7 @@ program
                     .then(() => db.close());
             })
             .then(() => console.log('user updated!'))
-            .catch(err => console.error('Could not set email:', err))
+            .catch(err => console.error('Could not set email:', err));
     });
 
 program
@@ -119,17 +119,55 @@ program
     });
 
 program
-    .command('list-projects', 'list all user projects')
-    .action(function() {
-        console.log('listing projects...');
-        // TODO
+    .command('list-projects')
+    .description('list all user projects')
+    .option('-l,--long')
+    .action(function(opts) {
+        return MongoClient.connect(mongoUri)
+            .then(db => {
+                var stream = db.collection('projects').find({}).stream();
+
+                stream.on('error', err => {
+                    console.error(err);
+                    db.close();
+                });
+
+                stream.on('data', doc => {
+                    if (opts.long) {
+                        console.log([
+                            doc.name,
+                            doc.user,
+                            doc.updated,
+                            doc.public ? 'public' : 'private'
+                        ].join('\t\t'));
+                    } else {
+                        console.log(doc.name);
+                    }
+                });
+
+                stream.on('end', () => db.close());
+            })
+            .catch(err => console.error(err));
     });
 
 program
-    .command('delete-project <user> <project>', 'delete project')
-    .action(function() {
-        console.log('listing projects...');
-        // TODO
+    .command('delete-project <username> <project>')
+    .action(function(username, project) {
+        return MongoClient.connect(mongoUri)
+            .then(db => {
+                return db.collection('projects').remove({
+                    user: username,
+                    name: project
+                }).then(res => {
+                    if (res.result.n) {
+                        console.log('project deleted');
+                    } else {
+                        console.log('project not found');
+                    }
+                    return db.close();
+                });
+            })
+            .catch(err => console.error(err));
     });
 
 program.parse(process.argv);
