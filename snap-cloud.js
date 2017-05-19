@@ -156,20 +156,29 @@ function snapCloud(options) {
 
         if (!email || !userName) {
             sendSnapError(res, 'Invalid signup request');
+        } else {
+            users.update({
+                _id: userName,
+                email: email
+            }, {
+                $set: {
+                    hash: hashPassword(password),
+                    updated: new Date()
+                },
+                $setOnInsert: {
+                    created: new Date()
+                }
+            }, {
+                upsert: true,
+                multi: false
+            }, function signupDone(err) {
+                if (err) {
+                    sendSnapError(res, 'Could not create user');
+                } else {
+                    emailPassword(res, email, userName, password, "Account created");
+                }
+            });
         }
-
-        users.insert({
-            _id: userName,
-            email: email,
-            hash: hashPassword(password),
-            created: new Date()
-        }, function signupDone(err) {
-            if (err) {
-                sendSnapError(res, 'User already exists');
-            } else {
-                emailPassword(res, email, userName, password, "Account created");
-            }
-        });
     });
 
     // ResetPW
