@@ -293,7 +293,7 @@ function snapCloud(options) {
             typeof userName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
-            return users.setPassword(userName, oldPassword, password)
+            return users.setPassword(userName, newPassword, oldPassword)
                 .then(() => res.sendStatus(200))
                 .catch(err => sendSnapError(res, 'Invalid password'));
         }
