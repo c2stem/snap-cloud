@@ -85,7 +85,7 @@ function updateProjectList(projects) {
                 (project.Updated.getMonth() + 1) + '/' +
                 project.Updated.getDate();
         }
-        metadata += '\n' + project.Origin;
+        metadata += '\n' + (project.Origin || '');
 
         return `
           <div class="col s12 m3 l2">

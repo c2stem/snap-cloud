@@ -165,7 +165,6 @@ function snapCloud(options) {
             typeof projectName !== 'string') {
             sendSnapError(res, 'Invalid request');
         } else {
-            console.log(userName, projectName);
             projects.findOne({
                 user: { // HACK: username is sent in lowercase 
                     $regex: new RegExp('^' + userName + '$', 'i')
@@ -317,15 +316,13 @@ function snapCloud(options) {
                     sendSnapError(res, 'Invalid XML data');
                 } else {
                     var fields = {
-                            updated: new Date(),
-                            snapdata: '<snapdata>' + sourceCode + media + '</snapdata>',
-                            notes: parsed.project.notes,
-                            thumbnail: parsed.project.thumbnail,
-                        },
-                        origin = req.get('origin');
-                    if (origin.search('^https?:\/\/localhost(:[0-9]*)?$') !== 0) {
-                        fields.origin = origin;
-                    }
+                        updated: new Date(),
+                        snapdata: '<snapdata>' + sourceCode + media + '</snapdata>',
+                        notes: parsed.project.notes,
+                        thumbnail: parsed.project.thumbnail,
+                        origin: req.get('origin') || req.get('host') || ''
+                    };
+                    console.log('save origin', fields.origin);
 
                     projects.update({
                         user: userName,
