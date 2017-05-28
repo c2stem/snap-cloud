@@ -320,9 +320,8 @@ function snapCloud(options) {
                         snapdata: '<snapdata>' + sourceCode + media + '</snapdata>',
                         notes: parsed.project.notes,
                         thumbnail: parsed.project.thumbnail,
-                        origin: req.get('origin') || req.get('host') || ''
+                        origin: req.get('origin') || options.default_origin
                     };
-                    console.log('save origin', fields.origin);
 
                     projects.update({
                         user: userName,
