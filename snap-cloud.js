@@ -254,7 +254,7 @@ function snapCloud(options) {
         }
 
         return projects.find(query)
-            .skip(page * 20).limit(20)
+            .skip(page * 100).limit(100)
             .toArray().then(function (docs) {
                 debug('Returned ' + docs.length + ' projects');
                 res.send(docs.map(function (proj) {
