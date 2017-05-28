@@ -27,7 +27,7 @@ function start(directory, options) {
                 mongodb: db,
                 mailer_from: "no-reply@c2stem.org",
                 mailer_smpt: undefined,
-                default_origin: 'physics.c2stem.org'
+                default_origin: 'http://physics.c2stem.org'
             }));
 
             if (!options.noprojects) {
