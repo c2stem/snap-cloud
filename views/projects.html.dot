@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    <h3 class="center">Public Snap Projects</h3>
+    <h3 class="center">{{= it.header }}</h3>
     <div class="container">
         <div class="row">
             <div class="col m3 s1"></div>

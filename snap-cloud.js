@@ -7,17 +7,28 @@ var express = require('express'),
     MongoStore = require('connect-mongo')(session),
     cookieParser = require('cookie'),
     debug = require('debug')('snap-cloud'),
+    dot = require('dot'),
+    fs = require('fs'),
+    path = require('path'),
     parseString = require('xml2js').parseString;
 
 function snapCloud(options) {
     var router = express.Router(),
         users = require('./src/users'),
         projects = options.mongodb.collection('projects'),
-        //projects = require('./src/projects'),
+        ProjectIndexHtml = getProjectIndexPage(options),
         apis = '';
 
     users.init(options.mongodb, options.mailer_smpt);
-    //projects.init(options.mongodb);
+
+    function getProjectIndexPage(options) {
+        var header = options.public_page_title || 'Public Snap Projects',
+            tplPath = path.join(__dirname, 'views', 'projects.html.dot'),
+            tplContent = fs.readFileSync(tplPath, 'utf8'),
+            tpl = dot.template(tplContent);
+
+        return tpl({header: header});
+    }
 
     router.addSnapApi = function addSnapApi(name, parameters, method, handler) {
         if (apis) {
@@ -209,6 +220,10 @@ function snapCloud(options) {
                 })
                 .catch(err => sendSnapError(res, 'User not found'));
         }
+    });
+
+    router.get('/projects.html', function (req, res) {
+        res.send(ProjectIndexHtml);
     });
 
     // PublicProjects
