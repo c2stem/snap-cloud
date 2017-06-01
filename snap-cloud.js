@@ -222,6 +222,7 @@ function snapCloud(options) {
         }
     });
 
+    router.use('/', express.static(path.join(__dirname, 'views')));
     router.get('/projects.html', function (req, res) {
         res.send(ProjectIndexHtml);
     });
