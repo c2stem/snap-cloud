@@ -94,7 +94,7 @@ function updateProjectList(projects) {
                 <img class="activator" src="${project.Thumbnail}" title="${metadata}">
               </div>
               <div class="card-content">
-                  <span title="${project.ProjectName}" class="card-title project-title activator grey-text text-darken-4 truncate">${project.ProjectName}<i class="material-icons right">more_vert</i></span>
+                  <span title="${project.ProjectName}" class="card-title project-title activator grey-text text-darken-4 truncate">${project.ProjectName}<br/><i class="material-icons right">more_vert</i></span>
                 <p><a href="${url}"></a></p>
               </div>
               <div class="card-reveal">
