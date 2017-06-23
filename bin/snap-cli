@@ -75,12 +75,13 @@ program
 program
     .command('add-user <username> <email>')
     .description('add new user with the given username and password')
-    .action(function(username, email) {
+    .option('-s, --silent', 'Do not email the user with tmp password')
+    .action(function(username, email, program) {
         return MongoClient.connect(mongoUri)
             .then(db => {
                 users.init(db);
 
-                return users.new(username, email)
+                return users.new(username, email, program.silent)
                     .then(() => db.close());
             })
             .then(() => console.log('user created!'))
