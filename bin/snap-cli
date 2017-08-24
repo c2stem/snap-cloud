@@ -76,12 +76,20 @@ program
     .command('add-user <username> <email>')
     .description('add new user with the given username and password')
     .option('-s, --silent', 'Do not email the user with tmp password')
+    .option('-d, --data [KEY_1=VAL_1,KEY_2=VAL_2,...KEY_N=VAL_N]', 'Add additional data for the user')
     .action(function(username, email, program) {
+        var data = null;
+
+        if (program.data) {
+            data = program.data.split(',').map(function(pair) {
+                return pair.split('=');
+            });
+        }
         return MongoClient.connect(mongoUri)
             .then(db => {
                 users.init(db);
 
-                return users.new(username, email, program.silent)
+                return users.new(username, email, program.silent, data)
                     .then(() => db.close());
             })
             .then(() => console.log('user created!'))

@@ -32,17 +32,25 @@
         mailer_from = mailerOpts.mailer_from || mailer_from;
     };
 
-    Users.new = function(username, email, silent) {
-        var password = generatePassword.generate({});
+    Users.new = function(username, email, silent, data) {
+        var password = generatePassword.generate({}),
+            userData = {
+                hash: hashPassword(password),
+                updated: new Date()
+            };
+
+        if (data) {
+            data.forEach(pair => {
+                var [key, value] = pair;
+                userData[key] = value;
+            });
+        }
 
         return collection.update({
             _id: username,
             email: email
         }, {
-            $set: {
-                hash: hashPassword(password),
-                updated: new Date()
-            },
+            $set: userData,
             $setOnInsert: {
                 created: new Date()
             }
