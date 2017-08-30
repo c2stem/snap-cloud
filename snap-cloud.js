@@ -10,6 +10,7 @@ var express = require('express'),
     dot = require('dot'),
     fs = require('fs'),
     path = require('path'),
+    mailer = require('./src/mailer'),
     parseString = require('xml2js').parseString;
 
 function snapCloud(options) {
@@ -19,7 +20,8 @@ function snapCloud(options) {
         ProjectIndexHtml = getProjectIndexPage(options),
         apis = '';
 
-    users.init(options.mongodb, options.mailer_smpt);
+    mailer.init(options.mailer_smpt);
+    users.init(options.mongodb);
 
     function getProjectIndexPage(options) {
         var header = options.public_page_title || 'Public Snap Projects',

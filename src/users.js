@@ -2,8 +2,7 @@
     var generatePassword = require('generate-password');
     var nodeMailer = require('nodemailer');
     var shaJs = require('sha.js');
-    var mailer_from = "no-reply@c2stem.org";
-    var transport;
+    var mailer = require('./mailer');
     var collection;
 
     function hashPassword(password) {
@@ -11,25 +10,15 @@
     }
 
     function emailPassword(email, user, password) {
-        return transport.sendMail({
-                from: mailer_from,
-                to: email,
-                subject: 'Temporary Password',
-                text: 'Hello ' + user +
-                    '!\n\nYour Snap password has been temporarily set to: ' +
-                    password + '. Please change it after logging in.'
-            })
-            .catch(err => {
-                throw new Error(`Could not send email: ${err}`);
-            });
+        var subject = 'Temporary Password';
+        var message = 'Hello ' + user +
+            '!\n\nYour Snap password has been temporarily set to: ' +
+            password + '. Please change it after logging in.';
+        return mailer.sendEmail(email, subject, message);
     }
 
-    Users.init = function(db, mailerOpts) {
+    Users.init = function(db) {
         collection = db.collection('users');
-
-        mailerOpts = mailerOpts || {};
-        transport = nodeMailer.createTransport(mailerOpts.mailer_smpt);
-        mailer_from = mailerOpts.mailer_from || mailer_from;
     };
 
     Users.new = function(username, email, silent, data) {

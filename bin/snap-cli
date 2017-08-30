@@ -9,6 +9,7 @@ var program = require('commander'),
     version = require('../package.json'),
     MongoClient = require('mongodb').MongoClient,
     users = require('../src/users'),
+    mailer = require('../src/mailer'),
     sha = require('sha.js'),
     mongoUri;
 
@@ -17,6 +18,7 @@ if (process.argv.length === 2) process.argv.push('--help');
 mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/snapcloud';
 program.version(version);
 
+mailer.init();
 program
     .command('list-users')
     .option('-l,--long')
@@ -85,10 +87,12 @@ program
                 return pair.split('=');
             });
         }
+        console.log('connecting to', mongoUri);
         return MongoClient.connect(mongoUri)
             .then(db => {
                 users.init(db);
 
+                console.log('creating new user', username);
                 return users.new(username, email, program.silent, data)
                     .then(() => db.close());
             })
