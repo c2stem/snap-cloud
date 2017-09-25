@@ -13,7 +13,9 @@ var program = require('commander'),
     sha = require('sha.js'),
     mongoUri;
 
-if (process.argv.length === 2) process.argv.push('--help');
+if (process.argv.length === 2) {
+    process.argv.push('--help');
+}
 
 mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/snapcloud';
 program.version(version);
