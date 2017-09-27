@@ -130,7 +130,7 @@ function snapCloud(options) {
         saveUninitialized: false,
         store: new MongoStore({
             db: options.mongodb,
-            ttl: 1 * 3600 // one hour 
+            ttl: 7 * 24 * 60 * 60 // one week 
         }),
         unset: 'destroy',
         cookie: {
