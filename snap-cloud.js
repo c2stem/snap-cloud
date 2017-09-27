@@ -13,6 +13,9 @@ var express = require('express'),
     mailer = require('./src/mailer'),
     parseString = require('xml2js').parseString;
 
+// redirect logs to stdout
+debug.log = console.log.bind(console);
+
 function snapCloud(options) {
     var router = express.Router(),
         users = require('./src/users'),
@@ -29,7 +32,9 @@ function snapCloud(options) {
             tplContent = fs.readFileSync(tplPath, 'utf8'),
             tpl = dot.template(tplContent);
 
-        return tpl({header: header});
+        return tpl({
+            header: header
+        });
     }
 
     router.addSnapApi = function addSnapApi(name, parameters, method, handler) {
