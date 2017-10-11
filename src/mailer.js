@@ -16,7 +16,7 @@
                 subject: subject,
                 text: message
             })
-            .then(() => console.log(`sending email ""${subject}"" to ${email}`))
+            .then(() => console.log(`sending email "${subject}" to ${email}`))
             .catch(err => {
                 var msg =  `Could not send email: ${err}`;
                 console.error(msg);
