@@ -119,13 +119,17 @@ program
     });
 
 program
-    .command('set-password <username> <password>')
+    .command('set-password <username> [password]')
     .action(function(username, password) {
         return MongoClient.connect(mongoUri)
             .then(db => {
+		var hash = null;
                 users.init(db);
 
-                var hash = sha('sha512').update(password).digest('hex');
+		if (password) {
+                    hash = sha('sha512').update(password).digest('hex');
+		}
+
                 return users.setPassword(username, hash)
                     .then(() => db.close());
             })
