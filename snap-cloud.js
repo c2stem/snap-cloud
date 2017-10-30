@@ -135,7 +135,7 @@ function snapCloud(options) {
         saveUninitialized: false,
         store: new MongoStore({
             db: options.mongodb,
-            ttl: 7 * 24 * 60 * 60 // one week 
+            ttl: 7 * 24 * 60 * 60 // one week
         }),
         unset: 'destroy',
         cookie: {
@@ -184,7 +184,7 @@ function snapCloud(options) {
             sendSnapError(res, 'Invalid request');
         } else {
             projects.findOne({
-                user: { // HACK: username is sent in lowercase 
+                user: { // HACK: username is sent in lowercase
                     $regex: new RegExp('^' + userName + '$', 'i')
                 },
                 name: projectName,

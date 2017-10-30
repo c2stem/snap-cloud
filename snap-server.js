@@ -30,7 +30,7 @@ function start(directory, options) {
                 default_origin: 'http://physics.c2stem.org'
             }));
 
-            if (!options.noprojects) {
+            if (options.projects) {
                 console.log('Listing public projects at projects.html');
                 app.use(express.static(__dirname + '/views/'));
             }
@@ -44,9 +44,24 @@ function start(directory, options) {
 
             // Start the server
             options.port = +options.port || 8080;
-            app.listen(options.port, function () {
+            if (options.collab) {
+                console.log('Collaboration is enabled');
+                var ws = require('ws'),
+                    collaboration = require('snap-collaboration');
+
                 console.log('Listening on port ' + options.port);
-            });
+                var wss = new ws.Server({
+                    server: app.listen(options.port)
+                });
+
+                // configure the websocket and app
+                collaboration.enable(app, wss);
+            } else {
+                console.log('Collaboration is disabled');
+                app.listen(options.port, function () {
+                    console.log('Listening on port ' + options.port);
+                });
+            }
         }
     });
 }
@@ -55,7 +70,8 @@ program.version('1.0.2')
     .option('-m, --mongo <uri>', 'sets MongoDB URI [//localhost/snapcloud]', '//localhost/snapcloud')
     .option('-v, --verbose', 'enable logging of snap-cloud')
     .option('-p, --port <n>', 'port number to use [8080]', 8080)
-    .option('-n, --noprojects', 'disable the listing of public projects')
+    .option('--no-projects', 'disable the listing of public projects')
+    .option('--no-collab', 'disable the collaboration service')
     .arguments('[directory]')
     .action(start)
     .parse(process.argv);
