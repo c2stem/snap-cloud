@@ -54,8 +54,18 @@ function start(directory, options) {
                     server: app.listen(options.port)
                 });
 
+                var collab = db.collection('collab');
+
                 // configure the websocket and app
-                collaboration.enable(app, wss);
+                collaboration.enable(app, wss, {
+                    record: function (json, session) {
+                        collab.insertOne({
+                            date: new Date(),
+                            json: JSON.stringify(json),
+                            session: session
+                        });
+                    }
+                });
             } else {
                 console.log('Collaboration is disabled');
                 app.listen(options.port, function () {
