@@ -57,6 +57,12 @@ function start(directory, options) {
                 var collab = db.collection('collab');
 
                 // configure the websocket and app
+		app.use('/collaboration/*', function(req, res, next) {
+		    res.header('Access-Control-Allow-Origin', req.get('origin'));
+		    res.header('Access-Control-Allow-Credentials', 'true');
+		    res.header('Access-Control-Allow-Methods', 'POST');
+		    next();
+		});
                 collaboration.enable(app, wss, {
                     record: function (json, session) {
                         collab.insertOne({
