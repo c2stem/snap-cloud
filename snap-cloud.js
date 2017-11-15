@@ -187,8 +187,8 @@ function snapCloud(options) {
                 user: { // HACK: username is sent in lowercase
                     $regex: new RegExp('^' + userName + '$', 'i')
                 },
-                name: projectName,
-                public: true
+                name: projectName
+                // public: true, TODO: do it properly for Nicole
             }, function (err, doc) {
                 if (err || !doc) {
                     console.log(err, doc);
@@ -246,8 +246,10 @@ function snapCloud(options) {
         if (searchText) {
             var allFields = ['name', 'user', 'origin', 'notes'];
 
-            if (searchText.includes('private')) {
+            // TODO: do it properly for Nicole
+            if (searchText.startsWith('private')) {
                 query.public = false;
+                searchText = searchText.substring(7); // bad style
             }
 
             if (!searchText.includes(':')) { // search ALL text
