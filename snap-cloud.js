@@ -246,6 +246,10 @@ function snapCloud(options) {
         if (searchText) {
             var allFields = ['name', 'user', 'origin', 'notes'];
 
+            if (searchText.includes('private')) {
+                query.public = false;
+            }
+
             if (!searchText.includes(':')) { // search ALL text
                 query.$or = allFields.map(field => {
                     var subquery = {};
