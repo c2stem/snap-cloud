@@ -82,7 +82,8 @@ function start(directory, options) {
     });
 }
 
-program.version('1.0.2')
+var pkgJson = require('./package');
+program.version(pkgJson.version)
     .option('-m, --mongo <uri>', 'sets MongoDB URI [//localhost/snapcloud]', '//localhost/snapcloud')
     .option('-v, --verbose', 'enable logging of snap-cloud')
     .option('-p, --port <n>', 'port number to use [8080]', 8080)
