@@ -28,7 +28,7 @@ function snapCloud(options) {
 
     function getProjectIndexPage(options) {
         var header = options.public_page_title || 'Public Snap Projects',
-            tplPath = path.join(__dirname, 'views', 'projects.html.dot'),
+            tplPath = path.join(__dirname, '..', 'views', 'projects.html.dot'),
             tplContent = fs.readFileSync(tplPath, 'utf8'),
             tpl = dot.template(tplContent);
 
