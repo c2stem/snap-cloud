@@ -2,15 +2,14 @@
   "name": "snap-cloud",
   "version": "1.0.2",
   "description": "Express extension for a Snap! (Build Your Own Blocks) cloud server",
-  "main": "snap-server.js",
+  "main": "src/snap-cloud.js",
   "scripts": {
-    "test-serv": "mocha --recursive test/",
-    "test": "DEBUG=snap-cloud ./node_modules/nodemon/bin/nodemon.js snap-server.js",
-    "start": "node snap-server.js"
+    "test": "mocha --recursive test/",
+    "test-serv": "DEBUG=snap-cloud ./node_modules/nodemon/bin/nodemon.js bin/snap-cli -- start",
+    "start": "node bin/snap-cli start"
   },
   "bin": {
-    "snap-cli": "./bin/snap-cli",
-    "snap-server": "./snap-server.js"
+    "snap-cli": "./bin/snap-cli"
   },
   "repository": {
     "type": "git",
