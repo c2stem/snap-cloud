@@ -2,7 +2,7 @@
 This is an open source version of the cloud backend for [Snap!](https://github.com/jmoenig/Snap--Build-Your-Own-Blocks).
 
 ## Usage
-First, install the server with `npm install -g snap-cloud`. Then, ensure that an instance of MongoDB is running and start the server with:
+First, install the server with `npm install -g c2stem/snap-cloud`. Then, ensure that an instance of MongoDB is running and start the server with:
 
 
 ```
