@@ -214,7 +214,7 @@ function startServer(directory, options={mongo:"//localhost:27017"}) {
 
     var express = require('express'),
         snapCloud = require('../src/snap-cloud'),
-        MongoClient = require('mongodb').MongoClient;
+        path = require('path');
 
     MongoClient.connect('mongodb:' + options.mongo, function (err, db) {
         if (err) {
@@ -234,9 +234,9 @@ function startServer(directory, options={mongo:"//localhost:27017"}) {
                 default_origin: 'http://physics.c2stem.org'
             }));
 
-            if (options.projects) {
+            if (!options.noProjects) {
                 console.log('Listing public projects at projects.html');
-                app.use(express.static(__dirname + '/views/'));
+                app.use(express.static(path.join(__dirname, '..', 'views')));
             }
 
             if (directory) {
