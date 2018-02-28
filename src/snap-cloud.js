@@ -10,7 +10,7 @@ var express = require('express'),
     dot = require('dot'),
     fs = require('fs'),
     path = require('path'),
-    mailer = require('./src/mailer'),
+    mailer = require('./mailer'),
     parseString = require('xml2js').parseString;
 
 // redirect logs to stdout
@@ -18,7 +18,7 @@ debug.log = console.log.bind(console);
 
 function snapCloud(options) {
     var router = express.Router(),
-        users = require('./src/users'),
+        users = require('./users'),
         projects = options.mongodb.collection('projects'),
         ProjectIndexHtml = getProjectIndexPage(options),
         apis = '';
